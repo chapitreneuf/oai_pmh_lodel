@@ -1,6 +1,9 @@
 # OAI-PMH server for lodel
 
-
+## Docs
+- http://www.openarchives.org/OAI/openarchivesprotocol.html
+- http://www.openarchives.org/OAI/2.0/guidelines.htm
+- http://www.openarchives.org/OAI/2.0/guidelines-repository.htm
 
 
 ## TODO
@@ -41,6 +44,8 @@
     - credentials are in lodel config
 - database
     - list of sites
+        - name
+        - description
     - list of documents (should be able to list identifiers)
         - title
         - date
@@ -54,10 +59,57 @@
 - script
     - update list of sites
     - update list of documents
+- records:
+    - dc
+        dc:title
+        dc:creator
+        dc:contibutor
+        dc:rights
+        dc:date
+        dc:publisher
+        dc:identifier
+        dc:language
+        dc:type
+        dc:coverage
+        dc:subjects
+        dc:description
+        dc:relation
+    - qdc
+        dcterms:title
+        dcterms:alternative
+        dcterms:creator
+        dcterms:contibutor
+        dcterms:issued
+        dcterms:accessRights
+        dcterms:available
+        dcterms:publisher
+        dcterms:identifier
+        dcterms:isPartOf
+        dcterms:hasFormat
+        dcterms:language
+        dcterms:type
+        dcterms:rights
+        dcterms:extent
+        dcterms:spatial
+        dcterms:temporal
+        dcterms:subjects
+        dctems:abstract
+        dctems:description
+        dcterms:bibliographicalCitation
+    - mets
+
     
 ## Protocol 
 - listset
     - must provide XML as text
+    - utiliser la table site
+    - http://www.openarchives.org/OAI/openarchivesprotocol.html#ListSets
+- ListIdentifiers
+    - http://www.openarchives.org/OAI/openarchivesprotocol.html#ListIdentifiers
+    - utiliser la table records
+        - identifier
+        - datestamp
+        - setSpec
 - record:
     $example_record = array(
         'identifier' => 'a.b.c',
