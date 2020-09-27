@@ -2,6 +2,7 @@
 
 global $db;
 global $database_prefix;
+global $current_site;
 
 # Connexion à lodel
 function lodel_init () {
@@ -41,27 +42,42 @@ function lodel_init () {
 #   none
 function connect_site($site='') {
     global $database_prefix;
+    global $current_site;
+
+    $current_site = $site;
     $db_name = $database_prefix . ($site ? ("_" . $site) : '');
     $GLOBALS['currentdb'] = $db_name;
     _log("Connexion à $db_name");
-    usecurrentdb();
+
+    # Do it ourself, lodel usecurrentdb() always return true…
+    # We want to return false if error
+    return $GLOBALS['db']->SelectDB($db_name);
 }
 
 # Role:
 #   Liste des sites lodel de cette instance
 function get_sites($status=0) {
     global $db;
+    global $current_site;
+
+    # Save current site name then connect to main
+    $previous_site = $current_site;
     connect_site();
+
     $sites = array();
-    $les_sites = $db->execute(lq("SELECT name FROM #_MTP_sites WHERE status>$status"));
+    $les_sites = $db->execute(lq("SELECT name FROM #_MTP_sites WHERE status>?"), [$status]);
     while ($site = $les_sites->FetchRow()) {
         $sites[] = $site['name'];
     }
+
+    # connect back
+    connect_site($previous_site);
+
     return $sites;
 }
 
 # Role:
-#   Recevoir la liste de entitiées d'une class
+#   Recevoir la liste de entités d'une class
 #   Donne les informations essentielles
 function get_entity_info($class, $type='', $site='') {
     global $db;
