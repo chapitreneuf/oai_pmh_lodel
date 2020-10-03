@@ -44,21 +44,31 @@
     - credentials are in lodel config
 - database
     - list of sites
-        - name
+        - id
+        - name # lodel name, site of origin
+        - title # pretty name
+        - set # journals || book
+        - oai_id # set
+        - upd # last update
         - description
     - list of documents (should be able to list identifiers)
+        - id
+        - identity # id sur le site lodel
         - title
         - date
-        - site of origin (set)
-        - openaire
-        - class
-        - type
+        - set
+        - site # of origin (lodel name) => NO is same as set
+        - class (lodel class)
+        - type (lodel type)
+        - type_dc => NO is same as class, type
+        - type_oa => NO is same as class, type
 - plugin lodel (optional)
     - update oai lists when documents are updated
     - 
 - script
     - update list of sites
     - update list of documents
+    - delete list of sites and documents
 - records:
     - dc
         dc:title

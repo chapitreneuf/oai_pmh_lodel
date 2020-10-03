@@ -40,3 +40,19 @@ $ok = $db->execute("CREATE TABLE `sets` (
     UNIQUE KEY `sets` (`set`,`name`)
 );");
 _log_debug($ok);
+
+$ok = $db->execute("DROP TABLE IF EXISTS `records`;");
+$ok = $db->execute("CREATE TABLE `records` (
+    `id` INT(10) unsigned NOT NULL AUTO_INCREMENT,
+    `identity` INT(10) unsigned NOT NULL,
+    `title` text,
+    `date` timestamp NOT NULL,
+    `set` VARCHAR(64) NOT NULL,
+    `class` VARCHAR(64) NOT NULL,
+    `type` VARCHAR(64) NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ids` (`set`,`identity`),
+    INDEX (`set`),
+    INDEX (`set`, `class`, `type`)
+);");
+_log_debug($ok);
