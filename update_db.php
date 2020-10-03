@@ -20,10 +20,9 @@ function update_sets() {
     global $db;
     $sites = get_sites();
     foreach($sites as $site) {
-        _log("set up $site");
-        // TODO : only use sites which are exporting oai (do that in get_sites)
-        $q = "INSERT INTO `sets` (`set`, `site`) VALUES (?, ?) ON DUPLICATE KEY UPDATE id=id;";
-        $ok = $db->execute($q, ['journal', $site]);
+        _log("set up ${site['name']}");
+        $q = "INSERT INTO `sets` (`set`, `name`, `oai_id`, `title`) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE id=id;";
+        $ok = $db->execute($q, ['journal', $site['name'], $site['oai_id'], $site['title']]);
         _log($q);
         _log_debug($ok);
     }

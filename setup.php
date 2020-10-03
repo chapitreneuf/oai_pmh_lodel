@@ -32,9 +32,11 @@ $ok = $db->execute("DROP TABLE IF EXISTS `sets`;");
 $ok = $db->execute("CREATE TABLE `sets` (
     `id` INT(10) unsigned NOT NULL AUTO_INCREMENT,
     `set` VARCHAR(64) NOT NULL,
-    `site` VARCHAR(64) NOT NULL,
+    `oai_id` VARCHAR(64) NOT NULL,
+    `name` VARCHAR(64) NOT NULL,
+    `title` VARCHAR(64) NOT NULL,
     `upd` timestamp NOT NULL DEFAULT current_timestamp(),
     PRIMARY KEY (`id`),
-    UNIQUE KEY `sets` (`set`,`site`)
+    UNIQUE KEY `sets` (`set`,`name`)
 );");
 _log_debug($ok);
