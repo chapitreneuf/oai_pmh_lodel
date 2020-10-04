@@ -53,8 +53,8 @@ function update_records() {
             connect_site('oai-pmh');
             _log_debug($records);
             foreach ($records as $record) {
-                $q = "INSERT INTO `records` (`identity`, `title`, `date`, `set`, `class`, `type`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE id=id;";
-                $ok = $db->execute($q, [$record['identity'], $record['titre'], $record['modificationdate'], $set['oai_id'], $class, $type]);
+                $q = "INSERT INTO `records` (`identity`, `title`, `date`, `set`, `oai_id`, `site`, `class`, `type`) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE id=id;";
+                $ok = $db->execute($q, [$record['identity'], $record['titre'], $record['modificationdate'], 'journals', $set['oai_id'], $set['name'], $class, $type]);
                 _log($q);
                 _log_debug($ok);
                 _log_debug([$record['identity'], $record['titre'], $record['modificationdate'], $set['oai_id'], $class, $type]);

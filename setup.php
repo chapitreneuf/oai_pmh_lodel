@@ -48,6 +48,8 @@ $ok = $db->execute("CREATE TABLE `records` (
     `title` text,
     `date` timestamp NOT NULL,
     `set` VARCHAR(64) NOT NULL,
+    `oai_id` VARCHAR(64) NOT NULL,
+    `site` VARCHAR(64) NOT NULL,
     `class` VARCHAR(64) NOT NULL,
     `type` VARCHAR(64) NOT NULL,
     PRIMARY KEY (`id`),
