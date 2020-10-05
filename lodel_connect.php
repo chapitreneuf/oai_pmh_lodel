@@ -18,6 +18,7 @@ function lodel_init () {
     error_log($cfg['sharedir']);
     error_log(SITEROOT);
     require 'context.php';
+    require 'textfunc.php';
     C::setCfg($cfg);
 
     require_once 'auth.php';
@@ -71,12 +72,19 @@ function get_sites($status=0) {
 
     while ($site = $les_sites->FetchRow()) {
         connect_site($site['name']);
-        $stmt = $db->execute(lq("SELECT value FROM #_TP_options WHERE `name`='oai_id'"));
-        $oai_id = $stmt->GetAll();
+        $oai_id = get_option('extra', 'oai_id');
         # Seulement les sites avec oai_id de renseigné
         if ($oai_id) {
-            $oai_id = $oai_id[0]['value'];
-            $sites[] = ['name' => $site['name'], 'title' => $site['title'], 'url' => $site['url'], 'oai_id' => $oai_id];
+            $this_site = ['name' => $site['name'], 'title' => $site['title'], 'url' => $site['url'], 'oai_id' => $oai_id];
+            $this_site['droitsauteur'] = get_option('metadonneessite', 'droitsauteur');
+            $this_site['editeur'] = get_option('metadonneessite', 'editeur');
+            $this_site['titresite'] = get_option('metadonneessite', 'titresite');
+            $this_site['issn'] = get_option('metadonneessite', 'issn');
+            $this_site['issn_electronique'] = get_option('metadonneessite', 'issn_electronique');
+            $this_site['langueprincipale'] = get_option('metadonneessite', 'langueprincipale');
+            $this_site['doi_prefixe'] = get_option('extra', 'doi_prefixe');
+            $this_site['openaire_access_level'] = get_option('extra', 'openaire_access_level');
+            $sites[] = $this_site;
         }
     }
 
@@ -85,6 +93,20 @@ function get_sites($status=0) {
 
     return $sites;
 }
+
+# Role:
+#   Recevoir la valeur d'une option
+function get_option($group, $name) {
+    global $db;
+    $q = lq("SELECT value FROM #_TP_options o, #_TP_optiongroups og WHERE o.idgroup = og.`id` AND og.`name` = ? AND  o.`name`=?");
+    $stmt = $db->execute($q, [$group, $name]);
+    $values = $stmt->GetAll();
+    if ($values) {
+        return $values[0]['value'];
+    }
+    return '';
+}
+
 
 # Role:
 #   Recevoir la liste de entités d'une class
@@ -108,6 +130,9 @@ function _log_debug($var, $print=true) {
 }
 
 function _log ($var, $print=true) {
+    if (php_sapi_name() == "cli") {
+        $print = false;
+    }
     if ($print) {
         print "<p>$var</p>";
     }

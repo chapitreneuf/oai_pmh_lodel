@@ -17,14 +17,16 @@ connect_site('oai-pmh') or die("Could not connect to oai-pmh, have you launched 
 global $db;
 update_sets();
 update_records();
+# TODO: delete records and sets that does not exists anymore
 
 function update_sets() {
     global $db;
     $sites = get_sites();
     foreach($sites as $site) {
         _log("set up ${site['name']}");
-        $q = "INSERT INTO `sets` (`set`, `name`, `oai_id`, `title`) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE id=id;";
-        $ok = $db->execute($q, ['journal', $site['name'], $site['oai_id'], $site['title']]);
+        # TODO: faire un vrai update
+        $q = "INSERT INTO `sets` (`set`, `name`, `oai_id`, `title`, `url`, `droitsauteur`, `editeur`, `titresite`, `issn`, `issn_electronique`, `langueprincipale`, `doi_prefixe`, `openaire_access_level`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE id=id;";
+        $ok = $db->execute($q, ['journal', $site['name'], $site['oai_id'], $site['title'], $site['url'], $site['droitsauteur'], $site['editeur'], $site['titresite'], $site['issn'], $site['issn_electronique'], $site['langueprincipale'], $site['doi_prefixe'], $site['openaire_access_level']]);
         _log($q);
         _log_debug($ok);
     }
@@ -32,7 +34,7 @@ function update_sets() {
 
 function update_records() {
     global $db;
-    $sets = get_sets(0, 0);
+    $sets = get_sets(0);
     foreach ($sets as $set) {
         _log_debug($set);
         $all_types = array (
@@ -48,11 +50,12 @@ function update_records() {
             list($class, $type, $type_dc, $type_oa) = $types;
 
             connect_site($set['name']);
-            $records = get_records_simple($class, $type);
+            $records = get_records_simple($class, $type, 0);
 
             connect_site('oai-pmh');
             _log_debug($records);
             foreach ($records as $record) {
+                # TODO: faire un vrai update
                 $q = "INSERT INTO `records` (`identity`, `title`, `date`, `set`, `oai_id`, `site`, `class`, `type`) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE id=id;";
                 $ok = $db->execute($q, [$record['identity'], $record['titre'], $record['modificationdate'], 'journals', $set['oai_id'], $set['name'], $class, $type]);
                 _log($q);

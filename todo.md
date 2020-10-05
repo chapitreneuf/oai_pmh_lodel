@@ -51,6 +51,15 @@
         - oai_id # set
         - upd # last update
         - description
+        OPTIONS.METADONNEESSITE.DROITSAUTEUR
+        OPTIONS.EXTRA.OPENAIRE_ACCESS_LEVEL
+        OPTIONS.METADONNEESSITE.EDITEUR
+        OPTIONS.METADONNEESSITE.TITRESITE
+        site_url
+        OPTIONS.EXTRA.PREFIXE_DOI
+        OPTIONS.METADONNEESSITE.ISSN
+        OPTIONS.METADONNEESSITE.ISSN_ELECTRONIQUE
+        OPTIONS.METADONNEESSITE.LANGUEPRINCIPALE
     - list of documents (should be able to list identifiers)
         - id
         - identity # id sur le site lodel
