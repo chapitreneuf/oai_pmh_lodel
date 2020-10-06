@@ -27,9 +27,8 @@ if (!connect_site('oai-pmh')) {
     print "\n";
 }
 
-global $db;
-$ok = $db->execute("DROP TABLE IF EXISTS `sets`;");
-$ok = $db->execute("CREATE TABLE `sets` (
+sql_query("DROP TABLE IF EXISTS `sets`;");
+sql_query("CREATE TABLE `sets` (
     `id` INT(10) unsigned NOT NULL AUTO_INCREMENT,
     `set` VARCHAR(64) NOT NULL,
     `oai_id` VARCHAR(64) NOT NULL,
@@ -48,10 +47,9 @@ $ok = $db->execute("CREATE TABLE `sets` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `sets` (`set`,`name`)
 );");
-_log_debug($ok);
 
-$ok = $db->execute("DROP TABLE IF EXISTS `records`;");
-$ok = $db->execute("CREATE TABLE `records` (
+sql_query("DROP TABLE IF EXISTS `records`;");
+sql_query("CREATE TABLE `records` (
     `id` INT(10) unsigned NOT NULL AUTO_INCREMENT,
     `identity` INT(10) unsigned NOT NULL,
     `title` text,
@@ -66,4 +64,3 @@ $ok = $db->execute("CREATE TABLE `records` (
     INDEX (`set`),
     INDEX (`set`, `class`, `type`)
 );");
-_log_debug($ok);

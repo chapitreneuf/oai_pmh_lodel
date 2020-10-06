@@ -1,6 +1,5 @@
 <?php
 
-global $db;
 global $database_prefix;
 global $current_site;
 
@@ -60,7 +59,6 @@ function connect_site($site='') {
 # Role:
 #   Liste des sites lodel de cette instance qui ont OAI d'activé
 function get_sites($status=0) {
-    global $db;
     global $current_site;
 
     # Save current site name then connect to main
@@ -68,9 +66,9 @@ function get_sites($status=0) {
     connect_site();
 
     $sites = array();
-    $les_sites = $db->execute(lq("SELECT title, name, url FROM #_MTP_sites WHERE status>?"), [$status]);
+    $les_sites = sql_get(lq("SELECT title, name, url FROM #_MTP_sites WHERE status>?"), [$status]);
 
-    while ($site = $les_sites->FetchRow()) {
+    foreach ($les_sites as $site) {
         connect_site($site['name']);
         $oai_id = get_option('extra', 'oai_id');
         # Seulement les sites avec oai_id de renseigné
@@ -84,6 +82,7 @@ function get_sites($status=0) {
             $this_site['langueprincipale'] = get_option('metadonneessite', 'langueprincipale');
             $this_site['doi_prefixe'] = get_option('extra', 'doi_prefixe');
             $this_site['openaire_access_level'] = get_option('extra', 'openaire_access_level');
+
             $sites[] = $this_site;
         }
     }
@@ -97,14 +96,9 @@ function get_sites($status=0) {
 # Role:
 #   Recevoir la valeur d'une option
 function get_option($group, $name) {
-    global $db;
     $q = lq("SELECT value FROM #_TP_options o, #_TP_optiongroups og WHERE o.idgroup = og.`id` AND og.`name` = ? AND  o.`name`=?");
-    $stmt = $db->execute($q, [$group, $name]);
-    $values = $stmt->GetAll();
-    if ($values) {
-        return $values[0]['value'];
-    }
-    return '';
+    $value = sql_getone($q, [$group, $name], 'value');
+    return $value ? $value : '';
 }
 
 
@@ -112,16 +106,47 @@ function get_option($group, $name) {
 #   Recevoir la liste de entités d'une class
 #   Donne les informations essentielles
 function get_entity_info($class, $type='', $site='') {
-    global $db;
-    _log("tentative de connexion à $site");
     if ($site) {
         connect_site($site);
     }
-    $query = lq("SELECT identity, titre, datemisenligne, langue, status FROM `#_TP_$class` c, `#_TP_entities` e WHERE c.identity = e.id AND status>0");
-    _log_debug($query);
-    $stmt = $db->execute($query);
-    _log_debug($stmt);
+    return sql_get(lq("SELECT identity, titre, datemisenligne, langue, status FROM `#_TP_$class` c, `#_TP_entities` e WHERE c.identity = e.id AND status>0"));
+}
+
+# Role:
+#   Query and return a statement
+function sql_query($q, $params=false) {
+    global $db;
+
+    $stmt = $db->execute($q, $params);
+    $err = $db->errorMsg();
+
+    if ($err) {
+        _log("Error with query $q");
+        _log_debug($params);
+        _log_debug($err);
+        _log_debug($stmt);
+        return false;
+    }
+
+    return $stmt;
+}
+
+# Role:
+#   Query and return array of results
+function sql_get($q, $params=false) {
+    $stmt = sql_query($q, $params);
     return $stmt->GetAll();
+}
+
+# Role:
+#   Query and return first row, or value of first row if given
+function sql_getone($q, $params=false, $value=false) {
+    $rows = sql_get($q, $params);
+    if ($rows) {
+        if ($value) return $rows[0][$value];
+        return $rows[0];
+    }
+    return false;
 }
 
 function _log_debug($var, $print=true) {
