@@ -32,6 +32,7 @@ function update_sets() {
 }
 
 function update_records() {
+    connect_site('oai-pmh');
     $sets = get_sets(0);
     foreach ($sets as $set) {
         _log("Set up des records de ${set['name']}");

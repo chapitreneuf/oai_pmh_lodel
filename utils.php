@@ -1,24 +1,17 @@
 <?php
 
+# MUST be connected to oai-pmh
 function get_sets ($limit=10, $offset=0, $order='id') {
-    global $current_site;
-
-    # Save current site name then connect to main
-    $previous_site = $current_site;
-    connect_site('oai-pmh');
-
     $q = "SELECT `set`, `oai_id`, `name`, `title` FROM `sets` ORDER BY `$order`";
     if ($limit) $q .=  " LIMIT $offset,$limit";
     $sets = sql_get($q.';');
-
-    # connect back
-    connect_site($previous_site);
 
     return $sets;
 }
 
 # Role:
 #   Get a single set info
+# MUST be connected to oai-pmh
 function get_set($site) {
     return sql_getone("SELECT * FROM `sets` WHERE `name` = ?;", [$site]);
 }
@@ -34,19 +27,15 @@ function get_records_simple($class, $type, $limit=10, $offset=0, $order='identit
     return $records;
 }
 
-# Get a full record
-function get_record($site, $class, $id) {
-    global $current_site;
-
-    # Save current site name then connect to main
-    $previous_site = $current_site;
-    connect_site('oai-pmh');
-
-    # Get set information of this record
-    $set = get_set($site);
-
+# Role:
+#   Get a full record
+# Input:
+#   $set: complete set of the site
+#   $class: class of the record
+#   $id: id entity of the record
+# MUST be connected to $set['name']
+function get_record($set, $class, $id) {
     # Get lodel record for this entity
-    connect_site($site);
     $rec = sql_getone(lq("SELECT c.* FROM #_TP_$class c, #_TP_entities e WHERE c.identity = e.id AND identity=?;"), [$id]);
     if (!$rec) return false;
 
@@ -96,9 +85,6 @@ function get_record($site, $class, $id) {
     #
     # DATE
     #
-
-    # connect back
-    connect_site($previous_site);
 
     _log_debug($record);
     return $record;
