@@ -150,12 +150,14 @@ function get_record($set, $class, $id) {
             foreach ($mltexts as $text) {
                 $description = removenotes($text[2]);
                 $description = strip_tags($description);
+                $description = html_entity_decode($description);
                 $record['abstract'][] = [$description, $text[1]];
             }
         } elseif (!empty($rec['texte'])) {
             # Name it description so formater can know it's not abstract
             $texte = removenotes($rec['texte']);
             $texte = strip_tags($texte);
+            $texte = html_entity_decode($texte);
             $texte = cuttext($texte, 500) . ' …';
             $record['description'] = [$texte, $record['language']];
         }
@@ -166,6 +168,7 @@ function get_record($set, $class, $id) {
             foreach ($mltexts as $text) {
                 $description = removenotes($text[2]);
                 $description = strip_tags($description);
+                $description = html_entity_decode($description);
                 $record['abstract'][] = [$description, $text[1]];
             }
     }
@@ -201,7 +204,7 @@ function get_record($set, $class, $id) {
         # TODO bibliographicCitation.volume
     }
 
-    _log_debug($record);
+//     _log_debug($record);
     return $record;
 }
 
