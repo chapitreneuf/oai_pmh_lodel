@@ -150,3 +150,33 @@ function get_children($id) {
 
     return $ids;
 }
+
+# Role:
+#   return oai or openaire type of a publication
+# Input:
+#   $class: lodel class of the publication
+#   $type: lodel type of the publication
+#   $set: oai or openaire
+# Output:
+#   $type: string of type of publication
+function convert_type($class, $type, $set='oai') {
+    $types = get_publication_types();
+    return get_publication_types()[$class][$type][$set];
+}
+
+# TODO: this should be a config (or at least extendable)
+function get_publication_types() {
+    return [
+        'publications' => [
+            'numero' => ['oai'=>'issue', 'openaire'=> 'other'],
+            'souspartie' => ['oai'=>'part', 'openaire'=> 'other'],
+        ],
+        'textes' => [
+            'article' => ['oai'=>'article', 'openaire'=> 'article'],
+            'chronique' => ['oai'=>'article', 'openaire'=> 'other'],
+            'compterendu' => ['oai'=>'review', 'openaire'=> 'review'],
+            'notedelecture' => ['oai'=>'review', 'openaire'=> 'review'],
+            'editorial' => ['oai'=>'introduction', 'openaire'=> 'article'],
+        ],
+    ];
+}
