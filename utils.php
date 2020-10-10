@@ -134,12 +134,48 @@ function get_record($set, $class, $id) {
     # DESCRIPTION
     #
 
-    # For textes use resume, sorted by lang. else use texte cut at 500 + … and lang of document
-    # For publications use introduction sorted by lang
+    # For textes use resume, split by lang
+    # Ese use texte cut at 500 + … and lang of document or site
     if ($class == 'textes') {
         if ($rec['resume']) {
-            $record['description'] = $rec['resume'];
+            # regexp from lodel/scripts/loops.php:533:function loop_mltext
+            preg_match_all("/(?:&amp;lt;|&lt;|<)r2r:ml lang\s*=(?:&amp;quot;|&quot;|\")(\w+)(?:&amp;quot;|&quot;|\")(?:&amp;gt;|&gt;|>)(.*?)(?:&amp;lt;|&lt;|<)\/r2r:ml(?:&amp;    546 gt;|&gt;|>)/s", $rec['resume'], $mltexts, PREG_SET_ORDER);
+            foreach ($mltexts as $text) {
+                $description = removenotes($text[2]);
+                $description = strip_tags($description);
+                $record['description'][] = [$description, $text[1]];
+            }
+        } else {
+            $texte = removenotes($rec['texte']);
+            $texte = strip_tags($texte);
+            $texte = cuttext($texte, 500) . ' …';
+            $record['description'][] = [$texte, $record['language']];
         }
+
+    # For publications use introduction split by lang
+    } elseif ($class == 'publications' && $rec['introduction']) {
+        preg_match_all("/(?:&amp;lt;|&lt;|<)r2r:ml lang\s*=(?:&amp;quot;|&quot;|\")(\w+)(?:&amp;quot;|&quot;|\")(?:&amp;gt;|&gt;|>)(.*?)(?:&amp;lt;|&lt;|<)\/r2r:ml(?:&amp;    546 gt;|&gt;|>)/s", $rec['introduction'], $mltexts, PREG_SET_ORDER);
+            foreach ($mltexts as $text) {
+                $description = removenotes($text[2]);
+                $description = strip_tags($description);
+                $record['description'][] = [$description, $text[1]];
+            }
+    }
+
+    #
+    # RELATION
+    #
+    if ($set['issn']) $record['relation'][] = 'info:eu-repo/semantics/reference/issn/' . $set['issn'];
+    if ($set['issn_electronique']) $record['relation'][] = 'info:eu-repo/semantics/reference/issn/' . $set['issn_electronique'];
+
+    #
+    # ALTERNATIVE
+    #
+    preg_match_all("/(?:&amp;lt;|&lt;|<)r2r:ml lang\s*=(?:&amp;quot;|&quot;|\")(\w+)(?:&amp;quot;|&quot;|\")(?:&amp;gt;|&gt;|>)(.*?)(?:&amp;lt;|&lt;|<)\/r2r:ml(?:&amp;    546 gt;|&gt;|>)/s", $rec['altertitre'], $mltexts, PREG_SET_ORDER);
+    foreach ($mltexts as $text) {
+        $altertitre = removenotes($text[2]);
+        $altertitre = strip_tags($altertitre);
+        $record['alternative'][] = [$altertitre, $text[1]];
     }
 
     _log_debug($record);
