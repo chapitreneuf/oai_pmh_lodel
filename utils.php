@@ -77,8 +77,6 @@ function get_record($set, $class, $id) {
     # RIGHTS
     #
 
-//     TODO: OPTIONS.METADONNEESSITE.DROITSAUTEUR
-//           OPTIONS.EXTRA.OPENAIRE_ACCESS_LEVEL
     $record['rights'][] = $set['droitsauteur'];
     $record['rights'][] = 'info:eu-repo/semantics/'.$set['openaire_access_level'];
 
@@ -117,8 +115,32 @@ function get_record($set, $class, $id) {
     #
     # COVERAGE
     #
+    $coverages = get_index($id, 'geographie');
+    foreach ($coverages as $coverage) {
+        $record['coverage'][] = $coverage['g_name'];
+    }
+
+    #
+    # SUBJECTS
+    #
+    $subjects = get_index($id, 'motscles%');
+    foreach ($subjects as $subject) {
+        $lang = str_replace('motscles','',$subject['type']);
+        $record['subjects'][] = [$subject['g_name'], $lang];
+    }
 
 
+    #
+    # DESCRIPTION
+    #
+
+    # For textes use resume, sorted by lang. else use texte cut at 500 + … and lang of document
+    # For publications use introduction sorted by lang
+    if ($class == 'textes') {
+        if ($rec['resume']) {
+            $record['description'] = $rec['resume'];
+        }
+    }
 
     _log_debug($record);
     return $record;
@@ -149,6 +171,18 @@ function get_children($id) {
     }
 
     return $ids;
+}
+
+# Role:
+#   get indexes of a type attach to an entity
+#   if type contains a % will search with SQL LIKE
+# Input:
+#   $id: id of entity
+#   $type: type of index
+function get_index($id, $type) {
+    $sql_type = strpos($type, '%') === false ? 't.`type` = ?' : 't.`type` LIKE ?';
+    $entries = sql_get(lq("SELECT e.g_name, t.type FROM #_TP_relations r, #_TP_entries e, #_TP_entrytypes t WHERE t.class='indexes' AND r.id1=? AND r.id2=e.id AND t.id=e.idtype AND nature='E' AND $sql_type ORDER BY t.`rank`, r.`degree`;"), [$id, $type]);
+    return $entries;
 }
 
 # Role:
