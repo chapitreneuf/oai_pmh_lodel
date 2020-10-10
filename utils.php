@@ -139,7 +139,7 @@ function get_record($set, $class, $id) {
 
 
     #
-    # DESCRIPTION
+    # DESCRIPTION / ABSTRACT
     #
 
     # For textes use resume, split by lang
@@ -151,13 +151,14 @@ function get_record($set, $class, $id) {
             foreach ($mltexts as $text) {
                 $description = removenotes($text[2]);
                 $description = strip_tags($description);
-                $record['description'][] = [$description, $text[1]];
+                $record['abstract'][] = [$description, $text[1]];
             }
         } else {
+            # Name it description so formater can know it's not abstract
             $texte = removenotes($rec['texte']);
             $texte = strip_tags($texte);
             $texte = cuttext($texte, 500) . ' …';
-            $record['description'][] = [$texte, $record['language']];
+            $record['description'] = [$texte, $record['language']];
         }
 
     # For publications use introduction split by lang
@@ -166,7 +167,7 @@ function get_record($set, $class, $id) {
             foreach ($mltexts as $text) {
                 $description = removenotes($text[2]);
                 $description = strip_tags($description);
-                $record['description'][] = [$description, $text[1]];
+                $record['abstract'][] = [$description, $text[1]];
             }
     }
 
