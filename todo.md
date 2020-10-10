@@ -79,42 +79,42 @@
     - update list of documents
     - delete list of sites and documents
 - records:
-    - dc
-        dc:title
-        dc:creator
-        dc:contibutor
-        dc:rights
-        dc:date
-        dc:publisher
-        dc:identifier
-        dc:language
-        dc:type
-        dc:coverage
-        dc:subjects
-        dc:description
-        dc:relation
+    - dc                                     record
+        dc:title                             title
+        dc:creator                           creator[]
+        dc:contibutor                        contributor[]
+        dc:rights                            rights, accessrights
+        dc:date                              issued, embargoed
+        dc:publisher                         publisher[]
+        dc:identifier                        identifier[url, doi]
+        dc:language                          language
+        dc:type                              type[]
+        dc:coverage                          coverage[]
+        dc:subjects                          subjects[]
+        dc:description                       abstract[] or description
+        dc:relation                          issn, eissn
     - qdc
-        dcterms:title
-        dcterms:alternative
-        dcterms:creator
-        dcterms:contibutor
-        dcterms:issued
-        dcterms:accessRights
-        dcterms:available
-        dcterms:publisher
-        dcterms:identifier
-        dcterms:isPartOf
-        dcterms:hasFormat
-        dcterms:language
-        dcterms:type
-        dcterms:rights
-        dcterms:extent
-        dcterms:spatial
-        dcterms:temporal
-        dcterms:subjects
-        dctems:abstract
-        dctems:description
-        dcterms:bibliographicalCitation
+        dcterms:title                        title
+        dcterms:alternative                  alternative[]
+        dcterms:creator                      creator[]
+        dcterms:contibutor                   contributor[]
+        dcterms:issued                       issued
+        dcterms:accessRights                 accessrights
+        dcterms:available                    embargoed
+        dcterms:publisher                    publisher[]
+        dcterms:identifier                   identifier[url, doi]
+        dcterms:isPartOf                     issn, eissn
+        dcterms:hasFormat                    ?
+        dcterms:language                     language
+        dcterms:type                         type[]
+        dcterms:rights                       rights
+        dcterms:extent                       extend
+        dcterms:spatial                      spatial[]
+        dcterms:temporal                     temporal[]
+        dcterms:subjects                     subjects[]
+        dctems:abstract                      abstract[]
+        dctems:description                   description
+        dcterms:bibliographicalCitation      bibliographicCitation[issue]
     - mets
 
     

@@ -76,16 +76,15 @@ function get_record($set, $class, $id) {
     #
     # RIGHTS
     #
-
-    $record['rights'][] = $set['droitsauteur'];
-    $record['rights'][] = 'info:eu-repo/semantics/'.$set['openaire_access_level'];
+    $record['rights'] = $set['droitsauteur'];
+    $record['accessrights'] = 'info:eu-repo/semantics/'.$set['openaire_access_level'];
 
     #
     # DATE
     #
-    $record['date'][] = $rec['datepubli'];
+    $record['issued'] = $rec['datepubli'];
     if ($set['openaire_access_level'] == 'embargoedAccess') {
-        $record['date'][] = 'info:eu-repo/date/embargoEnd/' . $rec['datepubli'];
+        $record['embargoed'] = $rec['datepubli'];
     }
 
     #
@@ -97,13 +96,13 @@ function get_record($set, $class, $id) {
     #
     # IDENTIFIER
     #
-    $record['identifier'][] = $set['url'] . $id;
-    $record['identifier'][] = 'urn:doi:' . $set['doi_prefixe'] . $id;
+    $record['identifier']['url'] = $set['url'] . $id;
+    $record['identifier']['doi'] = 'urn:doi:' . $set['doi_prefixe'] . $id;
 
     #
     # LANGUAGE
     #
-    $record['language'] = $rec['langue'] ? $rec['langue'] : $set['langueprincipale'];
+    $record['language'] = !empty($rec['langue']) ? $rec['langue'] : $set['langueprincipale'];
 
     #
     # TYPE
@@ -145,7 +144,7 @@ function get_record($set, $class, $id) {
     # For textes use resume, split by lang
     # Ese use texte cut at 500 + … and lang of document or site
     if ($class == 'textes') {
-        if ($rec['resume']) {
+        if (!empty($rec['resume'])) {
             # regexp from lodel/scripts/loops.php:533:function loop_mltext
             preg_match_all("/(?:&amp;lt;|&lt;|<)r2r:ml lang\s*=(?:&amp;quot;|&quot;|\")(\w+)(?:&amp;quot;|&quot;|\")(?:&amp;gt;|&gt;|>)(.*?)(?:&amp;lt;|&lt;|<)\/r2r:ml(?:&amp;    546 gt;|&gt;|>)/s", $rec['resume'], $mltexts, PREG_SET_ORDER);
             foreach ($mltexts as $text) {
@@ -153,7 +152,7 @@ function get_record($set, $class, $id) {
                 $description = strip_tags($description);
                 $record['abstract'][] = [$description, $text[1]];
             }
-        } else {
+        } elseif (!empty($rec['texte'])) {
             # Name it description so formater can know it's not abstract
             $texte = removenotes($rec['texte']);
             $texte = strip_tags($texte);
@@ -162,7 +161,7 @@ function get_record($set, $class, $id) {
         }
 
     # For publications use introduction split by lang
-    } elseif ($class == 'publications' && $rec['introduction']) {
+    } elseif ($class == 'publications' && !empty($rec['introduction'])) {
         preg_match_all("/(?:&amp;lt;|&lt;|<)r2r:ml lang\s*=(?:&amp;quot;|&quot;|\")(\w+)(?:&amp;quot;|&quot;|\")(?:&amp;gt;|&gt;|>)(.*?)(?:&amp;lt;|&lt;|<)\/r2r:ml(?:&amp;    546 gt;|&gt;|>)/s", $rec['introduction'], $mltexts, PREG_SET_ORDER);
             foreach ($mltexts as $text) {
                 $description = removenotes($text[2]);
@@ -174,8 +173,8 @@ function get_record($set, $class, $id) {
     #
     # RELATION
     #
-    if ($set['issn']) $record['relation'][] = 'info:eu-repo/semantics/reference/issn/' . $set['issn'];
-    if ($set['issn_electronique']) $record['relation'][] = 'info:eu-repo/semantics/reference/issn/' . $set['issn_electronique'];
+    if (!empty($set['issn'])) $record['issn'] = 'info:eu-repo/semantics/reference/issn/' . $set['issn'];
+    if (!empty($set['issn_electronique'])) $record['eissn'] = 'info:eu-repo/semantics/reference/issn/' . $set['issn_electronique'];
 
     #
     # ALTERNATIVE
@@ -190,14 +189,14 @@ function get_record($set, $class, $id) {
     #
     # EXTEND
     #
-    if ($class == 'textes' && $rec['pagination']) {
+    if ($class == 'textes' && !empty($rec['pagination'])) {
         $record['extend'] = $rec['pagination'];
     }
 
     #
     # bibliographicalCitation
     #
-    if ($class == 'publications' && $rec['numerometas']) {
+    if ($class == 'publications' && !empty($rec['numerometas'])) {
         $record['bibliographicCitation']['issue'] = $rec['numerometas'];
         # TODO bibliographicCitation.volume
     }
