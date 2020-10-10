@@ -121,6 +121,14 @@ function get_record($set, $class, $id) {
     }
 
     #
+    # TEMPORAL
+    #
+    $temporals = get_index($id, 'chrono');
+    foreach ($temporals as $temporal) {
+        $record['temporal'][] = $temporal['g_name'];
+    }
+
+    #
     # SUBJECTS
     #
     $subjects = get_index($id, 'motscles%');
@@ -176,6 +184,21 @@ function get_record($set, $class, $id) {
         $altertitre = removenotes($text[2]);
         $altertitre = strip_tags($altertitre);
         $record['alternative'][] = [$altertitre, $text[1]];
+    }
+
+    #
+    # EXTEND
+    #
+    if ($class == 'textes' && $rec['pagination']) {
+        $record['extend'] = $rec['pagination'];
+    }
+
+    #
+    # bibliographicalCitation
+    #
+    if ($class == 'publications' && $rec['numerometas']) {
+        $record['bibliographicCitation']['issue'] = $rec['numerometas'];
+        # TODO bibliographicCitation.volume
     }
 
     _log_debug($record);
