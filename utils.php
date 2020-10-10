@@ -36,7 +36,7 @@ function get_records_simple($class, $type, $limit=10, $offset=0, $order='identit
 # MUST be connected to $set['name']
 function get_record($set, $class, $id) {
     # Get lodel record for this entity
-    $rec = sql_getone(lq("SELECT c.* FROM #_TP_$class c, #_TP_entities e WHERE c.identity = e.id AND identity=?;"), [$id]);
+    $rec = sql_getone(lq("SELECT c.*, t.type FROM #_TP_$class c, #_TP_entities e, #_TP_types t WHERE e.idtype = t.id AND c.identity = e.id AND identity=?;"), [$id]);
     if (!$rec) return false;
 
     # Our big array with all info about the record
@@ -79,12 +79,46 @@ function get_record($set, $class, $id) {
 
 //     TODO: OPTIONS.METADONNEESSITE.DROITSAUTEUR
 //           OPTIONS.EXTRA.OPENAIRE_ACCESS_LEVEL
-    $record['rights'][] = '';
-    $record['rights'][] = 'info:eu-repo/semantics/';
+    $record['rights'][] = $set['droitsauteur'];
+    $record['rights'][] = 'info:eu-repo/semantics/'.$set['openaire_access_level'];
 
     #
     # DATE
     #
+    $record['date'][] = $rec['datepubli'];
+    if ($set['openaire_access_level'] == 'embargoedAccess') {
+        $record['date'][] = 'info:eu-repo/date/embargoEnd/' . $rec['datepubli'];
+    }
+
+    #
+    # PUBLISHER
+    #
+    $record['publisher'][] = $set['editeur'];
+    $record['publisher'][] = $set['titresite'];
+
+    #
+    # IDENTIFIER
+    #
+    $record['identifier'][] = $set['url'] . $id;
+    $record['identifier'][] = 'urn:doi:' . $set['doi_prefixe'] . $id;
+
+    #
+    # LANGUAGE
+    #
+    $record['language'] = $rec['langue'] ? $rec['langue'] : $set['langueprincipale'];
+
+    #
+    # TYPE
+    #
+    # TODO faire la liaison avec la table type pour l'avoir dans le record
+    $record['type'][] = convert_type($class, $rec['type'], 'oai');
+    $record['type'][] = 'info:eu-repo/semantics/' . convert_type($class, $rec['type'], 'openaire');
+
+    #
+    # COVERAGE
+    #
+
+
 
     _log_debug($record);
     return $record;
