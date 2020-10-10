@@ -36,27 +36,19 @@ function update_records() {
     $sets = get_sets(0);
     foreach ($sets as $set) {
         _log("Set up des records de ${set['name']}");
-        $all_types = array (
-            ['publications', 'numero', 'issue', 'other'],
-            ['publications', 'souspartie', 'part', 'other'],
-            ['textes', 'article', 'article', 'article'],
-            ['textes', 'chronique', 'article', 'other'],
-            ['textes', 'compterendu', 'review', 'review'],
-            ['textes', 'notedelecture', 'review', 'review'],
-            ['textes', 'editorial', 'introduction', 'article'],
-        );
-        foreach ($all_types as $types) {
-            list($class, $type, $type_dc, $type_oa) = $types;
+        $publication_types = get_publication_types();
+        foreach ($publication_types as $class => $types) {
+            foreach ($types as $type => $stuff) {
+                connect_site($set['name']);
+                $records = get_records_simple($class, $type, 0);
 
-            connect_site($set['name']);
-            $records = get_records_simple($class, $type, 0);
-
-            connect_site('oai-pmh');
-            foreach ($records as $record) {
-                # TODO: faire un vrai update
-                $q = "INSERT INTO `records` (`identity`, `title`, `date`, `set`, `oai_id`, `site`, `class`, `type`) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE id=id;";
-                sql_query($q, [$record['identity'], $record['titre'], $record['modificationdate'], 'journals', $set['oai_id'], $set['name'], $class, $type]);
-                _log("insert de $class, $type : ${record['identity']}, ${record['titre']}, ${record['modificationdate']}, ${set['oai_id']}, ${set['name']}");
+                connect_site('oai-pmh');
+                foreach ($records as $record) {
+                    # TODO: faire un vrai update
+                    $q = "INSERT INTO `records` (`identity`, `title`, `date`, `set`, `oai_id`, `site`, `class`, `type`) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE id=id;";
+                    sql_query($q, [$record['identity'], $record['titre'], $record['modificationdate'], 'journals', $set['oai_id'], $set['name'], $class, $type]);
+                    _log("insert de $class, $type : ${record['identity']}, ${record['titre']}, ${record['modificationdate']}, ${set['oai_id']}, ${set['name']}");
+                }
             }
         }
     }
