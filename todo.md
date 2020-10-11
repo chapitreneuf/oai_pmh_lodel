@@ -119,8 +119,7 @@
 
     
 ## Protocol 
-- listset
-    - must provide XML as text
+- listsets
     - utiliser la table site
     - http://www.openarchives.org/OAI/openarchivesprotocol.html#ListSets
 - ListIdentifiers
