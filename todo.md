@@ -165,3 +165,20 @@
 while inotifywait -r -e modify,create,delete,move .; do
     rsync -avz --delete --exclude-from=.rsyncignore . /target
 done
+
+## TODO
+  - put sql functions in one file
+  - create config
+    - list size
+    - baseURL
+    - adminEmail
+    - metadatas
+    - repositoryName
+    - earliestDatestamp
+    - deletedRecord
+    - global set name
+    - global set description
+  - mets
+    - only for publications, numero
+    - mhhhh
+     

@@ -1,5 +1,10 @@
 <?php
 
+#
+# Functions that answer to verbs of oai-pmh protocol
+#
+
+# TODO: need $count, $deliveredRecords, $maxItems
 function listSets($resumptionToken) {
     $sets = array(
         ['setSpec'=>"journals", 'setName'=>"Les super journaux de notre dépôt"]
@@ -32,6 +37,8 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $deliveredRec
     }
     $where = implode(' AND ', $wheres);
 
+    # METS metadataPrefix: force class=publications AND type=numero
+
     connect_site('oai-pmh');
     if ($count) {
         $total = sql_getone('SELECT count(id) as total FROM records WHERE '.$where, $bind, 'total');
@@ -49,7 +56,9 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $deliveredRec
         $set = get_set($record_info['site']);
 
         connect_site($record_info['site']);
+        # TODO: do not search record if ListIdentifiers
         $record = get_record($set, $record_info['class'], $record_info['identity']);
+        # TODO format according to metadataPrefix
         $record_formated = format_oai_dc($record);
         $records[] = [
             'identifier' => 'doi:' . $set['doi_prefixe'] . $record_info['identity'],
@@ -69,10 +78,11 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $deliveredRec
     }
 
     return $records;
-//     $q = 'SELECT 'site, class, type' FROM records WHERE ";
 }
 
 function format_oai_dc($record) {
+    # TODO: each element must be an array
+    # each value must be an other array [content=>string, attrs=>[name=>value]]
     $oai['dc:title'] = $record['title'];
     $oai['dc:creator'] = $record['creator'];
     $oai['dc:contibutor'] = $record['contributor'];
@@ -97,3 +107,36 @@ function format_oai_dc($record) {
     $oai['dc:relation'][] = $record['eissn'];
     return $oai;
 }
+
+function format_oai_qdc($record) {
+    # TODO: each element must be an array
+    # each value must be an other array [content=>string, attrs=>[name=>value]]
+    $oai['dcterms:title'] = $record['title'];
+    $oai['dcterms:alternative'] = $record['alternative'];
+    $oai['dcterms:creator'] = $record['creator'];
+    $oai['dcterms:contibutor'] = $record['contributor'];
+    $oai['dcterms:issued'] = $record['issued'];
+    $oai['dcterms:accessRights'] = $record['accessrights'];
+    $oai['dcterms:available'] = $record['embargoed'];
+    $oai['dcterms:publisher'] = $record['publisher'];
+    # TODO: attrs uri and urn
+    $oai['dcterms:identifier'] = $record['identifier[url, doi]'];
+    # TODO: attrs issn and eissn
+    $oai['dcterms:isPartOf'] = $record['issn, eissn'];
+//     $oai['dcterms:hasFormat              '] = $record['?'];
+    $oai['dcterms:language'] = $record['language'];
+    $oai['dcterms:type'] = $record['type'];
+    $oai['dcterms:rights'] = $record['rights'];
+    $oai['dcterms:extent'] = $record['extend'];
+    $oai['dcterms:spatial'] = $record['spatial'];
+    $oai['dcterms:temporal'] = $record['temporal'];
+    # TODO attrs
+    $oai['dcterms:subjects'] = $record['subjects'];
+    # TODO attrs
+    $oai['dctems:abstract'] = $record['abstract[]'];
+    $oai['dctems:description'] = $record['description'];
+    # TODO
+    $oai['dcterms:bibliographicalCitation'] = $record['bibliographicCitation[issue]'];
+
+    return $oai;
+};

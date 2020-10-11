@@ -62,6 +62,7 @@ function get_sites($status=0) {
     global $current_site;
 
     # Save current site name then connect to main
+    # TODO: delete auto connexion
     $previous_site = $current_site;
     connect_site();
 
@@ -72,6 +73,7 @@ function get_sites($status=0) {
         connect_site($site['name']);
         $oai_id = get_option('extra', 'oai_id');
         # Seulement les sites avec oai_id de renseigné
+        # TODO if status == 0 get site anyway
         if ($oai_id) {
             $this_site = ['name' => $site['name'], 'title' => $site['title'], 'url' => $site['url'], 'oai_id' => $oai_id];
             $this_site['droitsauteur'] = get_option('metadonneessite', 'droitsauteur');
@@ -117,6 +119,7 @@ function get_entity_info($class, $type='', $site='') {
 function sql_query($q, $params=false) {
     global $db;
 
+    # TODO make sure to setFetchMode(ADODB_FETCH_ASSOC)
     $stmt = $db->execute($q, $params);
     $err = $db->errorMsg();
 
@@ -135,6 +138,8 @@ function sql_query($q, $params=false) {
 #   Query and return array of results
 function sql_get($q, $params=false) {
     $stmt = sql_query($q, $params);
+    # TODO use a loop and fetchRow
+    # if $column is given, indexed by column
     return $stmt->GetAll();
 }
 

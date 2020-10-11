@@ -19,10 +19,12 @@ update_records();
 # TODO: delete records and sets that does not exists anymore
 
 function update_sets() {
+    # TODO: connect to database before
+    # TODO: ask for status = 1 !
     $sites = get_sites();
     foreach($sites as $site) {
         _log("Set up ${site['name']}");
-        # TODO: faire un vrai update
+        # TODO: faire un vrai update: test SELECT id from `sets` where set = ? AND name = ?; => update or insert otherwise
         $q = "INSERT INTO `sets` (`set`, `name`, `oai_id`, `title`, `url`, `droitsauteur`, `editeur`, `titresite`, `issn`, `issn_electronique`, `langueprincipale`, `doi_prefixe`, `openaire_access_level`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE id=id;";
         sql_query($q,
             ['journal', $site['name'], $site['oai_id'], $site['title'], $site['url'], $site['droitsauteur'],
@@ -53,3 +55,19 @@ function update_records() {
         }
     }
 }
+
+/* TODO : delete old records
+    delete site
+    ask for all sites, index in hash by id
+    get all of our sites
+    foreach our site if not in index
+        delete our site
+        delete all entries in record
+    delete records
+    ask for our set
+    get all records from this set (0,1000) order by identity
+    sql from entities identity in () status > 0
+    if list is 1000 next
+    index in hash by identity
+    loop on our record, delete if not exists
+*/
