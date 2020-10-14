@@ -96,8 +96,8 @@ function get_record($set, $class, $id) {
     #
     # IDENTIFIER
     #
-    $record['identifier']['url'] = $set['url'] . $id;
-    $record['identifier']['doi'] = 'urn:doi:' . $set['doi_prefixe'] . $id;
+    $record['identifier_url'] = $set['url'] . $id;
+    $record['identifier_doi'] = 'urn:doi:' . $set['doi_prefixe'] . $id;
 
     #
     # LANGUAGE
@@ -107,7 +107,6 @@ function get_record($set, $class, $id) {
     #
     # TYPE
     #
-    # TODO faire la liaison avec la table type pour l'avoir dans le record
     $record['type'][] = convert_type($class, $rec['type'], 'oai');
     $record['type'][] = 'info:eu-repo/semantics/' . convert_type($class, $rec['type'], 'openaire');
 
@@ -142,7 +141,7 @@ function get_record($set, $class, $id) {
     #
 
     # For textes use resume, split by lang
-    # Ese use texte cut at 500 + … and lang of document or site
+    # Else use texte cut at 500 + … and lang of document or site
     if ($class == 'textes') {
         if (!empty($rec['resume'])) {
             # regexp from lodel/scripts/loops.php:533:function loop_mltext
@@ -154,12 +153,12 @@ function get_record($set, $class, $id) {
                 $record['abstract'][] = [$description, $text[1]];
             }
         } elseif (!empty($rec['texte'])) {
-            # Name it description so formater can know it's not abstract
+            # Name it description so formater can know it's not abstract (qdc)
             $texte = removenotes($rec['texte']);
             $texte = strip_tags($texte);
             $texte = html_entity_decode($texte);
             $texte = cuttext($texte, 500) . ' …';
-            $record['description'] = [$texte, $record['language']];
+            $record['description'][] = [$texte, $record['language']];
         }
 
     # For publications use introduction split by lang
@@ -200,7 +199,7 @@ function get_record($set, $class, $id) {
     # bibliographicalCitation
     #
     if ($class == 'publications' && !empty($rec['numerometas'])) {
-        $record['bibliographicCitation']['issue'] = $rec['numerometas'];
+        $record['bibliographicCitation.issue'] = $rec['numerometas'];
         # TODO bibliographicCitation.volume
     }
 

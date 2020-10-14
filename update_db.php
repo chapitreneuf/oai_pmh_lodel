@@ -20,7 +20,6 @@ update_records();
 
 function update_sets() {
     # TODO: connect to database before
-    # TODO: ask for status = 1 !
     $sites = get_sites();
     foreach($sites as $site) {
         _log("Set up ${site['name']}");

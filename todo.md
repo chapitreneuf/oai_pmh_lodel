@@ -86,7 +86,7 @@
         dc:rights                            rights, accessrights
         dc:date                              issued, embargoed
         dc:publisher                         publisher[]
-        dc:identifier                        identifier[url, doi]
+        dc:identifier                        identifier_url, identifier_doi
         dc:language                          language
         dc:type                              type[]
         dc:coverage                          coverage[]
@@ -102,7 +102,7 @@
         dcterms:accessRights                 accessrights
         dcterms:available                    embargoed
         dcterms:publisher                    publisher[]
-        dcterms:identifier                   identifier[url, doi]
+        dcterms:identifier                   identifier_url, identifier_doi
         dcterms:isPartOf                     issn, eissn
         dcterms:hasFormat                    ?
         dcterms:language                     language
@@ -161,7 +161,7 @@
     - not a so bad idea 
 
 ## Rsync auto
-while inotifywait -r -e modify,create,delete,move .; do
+while inotifywait -r -e attrib,modify,create,delete,move .; do
     rsync -avz --delete --exclude-from=.rsyncignore . /target
 done
 
@@ -180,4 +180,7 @@ done
   - mets
     - only for publications, numero
     - mhhhh
+  - dates must be UTC
+    - double check modification dates it is important for incremental harvest
+    
      
