@@ -17,7 +17,7 @@ function listSets($resumptionToken) {
     return $sets;
 }
 
-function ListRecords($metadataPrefix, $from, $until, $set, $count, $deliveredRecords, $maxItems) {
+function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records, $deliveredRecords, $maxItems) {
     if (!empty($from)) {
         $wheres[] = '`date` >= ?';
         $bind[] = $from;
@@ -56,39 +56,44 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $deliveredRec
         $set = get_set($record_info['site']);
 
         connect_site($record_info['site']);
-        # TODO: do not search record if ListIdentifiers
-        $record = get_record($set, $record_info['class'], $record_info['identity']);
 
-        # TODO format according to metadataPrefix
-        if ($metadataPrefix == 'oai_dc') {
-            $record_formated = format_oai_dc($record);
-            $container_name = 'oai_dc:dc';
-            $container_attributes = [
-                'xmlns:oai_dc' => "http://www.openarchives.org/OAI/2.0/oai_dc/",
-                'xmlns:dc' => "http://purl.org/dc/elements/1.1/",
-                'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
-                'xsi:schemaLocation' => 'http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd'
-            ];
-        } else if ($metadataPrefix == 'qdc') {
-            $record_formated = format_oai_qdc($record);
-            $container_name = 'qdc:qualifieddc';
-            $container_attributes = [
-                'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
-                'xsi:schemaLocation' => 'http://www.bl.uk/namespaces/oai_dcq/ http://www.bl.uk/schemas/qualifieddc/oai_dcq.xsd'
-            ];
-        }
-        $records[] = [
-            # TODO: create a function for that
+        $record = [
             'identifier' => 'doi:' . $set['doi_prefixe'] . $record_info['identity'],
             'datestamp' => $record_info['date'],
             # TODO: create a function for that
             'set' => $record_info['set'] . ':' . $record_info['oai_id'],
-            'metadata' => [
+        ];
+
+        # Only search for all informations if ListRecords
+        if ($list_records) {
+            $record_raw = get_record($set, $record_info['class'], $record_info['identity']);
+
+            if ($metadataPrefix == 'oai_dc') {
+                $record_formated = format_oai_dc($record_raw);
+                $container_name = 'oai_dc:dc';
+                $container_attributes = [
+                    'xmlns:oai_dc' => "http://www.openarchives.org/OAI/2.0/oai_dc/",
+                    'xmlns:dc' => "http://purl.org/dc/elements/1.1/",
+                    'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
+                    'xsi:schemaLocation' => 'http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd'
+                ];
+            } else if ($metadataPrefix == 'qdc') {
+                $record_formated = format_oai_qdc($record_raw);
+                $container_name = 'qdc:qualifieddc';
+                $container_attributes = [
+                    'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
+                    'xsi:schemaLocation' => 'http://www.bl.uk/namespaces/oai_dcq/ http://www.bl.uk/schemas/qualifieddc/oai_dcq.xsd'
+                ];
+            }
+
+            $record['metadata'] = [
                 'container_name' => $container_name,
                 'container_attributes' => $container_attributes,
                 'fields' => $record_formated
-            ],
-        ];
+            ];
+        }
+
+        $records[] = $record;
     }
 
     return $records;
