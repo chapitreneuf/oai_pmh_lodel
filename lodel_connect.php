@@ -138,6 +138,7 @@ function sql_query($q, $params=false) {
 #   Query and return array of results
 function sql_get($q, $params=false) {
     $stmt = sql_query($q, $params);
+    if (!$stmt) return false;
     # TODO use a loop and fetchRow
     # if $column is given, indexed by column
     return $stmt->GetAll();
