@@ -17,6 +17,15 @@ function listSets($resumptionToken) {
     return $sets;
 }
 
+function GetRecord($identifier, $metadataPrefix) {
+    $record_info = get_record_from_identifier($identifier);
+    if (!$record_info) return false;
+
+    # METS metadataPrefix: force class=publications AND type=numero
+
+    return create_record($record_info, $metadataPrefix, True);
+}
+
 function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records, $deliveredRecords, $maxItems) {
     if (!empty($from)) {
         $wheres[] = '`date` >= ?';
@@ -52,51 +61,57 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records
 //     _log_debug($record_list);
 
     foreach ($record_list as $record_info) {
-        connect_site('oai-pmh');
-        $set = get_set($record_info['site']);
-
-        connect_site($record_info['site']);
-
-        $record = [
-            'identifier' => 'doi:' . $set['doi_prefixe'] . $record_info['identity'],
-            'datestamp' => $record_info['date'],
-            # TODO: create a function for that
-            'set' => $record_info['set'] . ':' . $record_info['oai_id'],
-        ];
-
-        # Only search for all informations if ListRecords
-        if ($list_records) {
-            $record_raw = get_record($set, $record_info['class'], $record_info['identity']);
-
-            if ($metadataPrefix == 'oai_dc') {
-                $record_formated = format_oai_dc($record_raw);
-                $container_name = 'oai_dc:dc';
-                $container_attributes = [
-                    'xmlns:oai_dc' => "http://www.openarchives.org/OAI/2.0/oai_dc/",
-                    'xmlns:dc' => "http://purl.org/dc/elements/1.1/",
-                    'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
-                    'xsi:schemaLocation' => 'http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd'
-                ];
-            } else if ($metadataPrefix == 'qdc') {
-                $record_formated = format_oai_qdc($record_raw);
-                $container_name = 'qdc:qualifieddc';
-                $container_attributes = [
-                    'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
-                    'xsi:schemaLocation' => 'http://www.bl.uk/namespaces/oai_dcq/ http://www.bl.uk/schemas/qualifieddc/oai_dcq.xsd'
-                ];
-            }
-
-            $record['metadata'] = [
-                'container_name' => $container_name,
-                'container_attributes' => $container_attributes,
-                'fields' => $record_formated
-            ];
-        }
-
+        $record = create_record($record_info, $metadataPrefix, $list_records);
         $records[] = $record;
     }
 
     return $records;
+}
+
+function create_record($record_info, $metadataPrefix, $full) {
+    $record = [
+        'identifier' => oai_identifier($record_info['oai_id'], $record_info['identity']),
+        'datestamp' => $record_info['date'],
+        # TODO: create a function for that
+        'set' => $record_info['set'] . ':' . $record_info['oai_id'],
+    ];
+
+    if (!$full) return $record;
+
+    # Only search for all informations if ListRecords
+    connect_site('oai-pmh');
+    $set = get_set($record_info['site']);
+
+    connect_site($record_info['site']);
+    $record_raw = get_record($set, $record_info['class'], $record_info['identity']);
+
+    if ($metadataPrefix == 'oai_dc') {
+        $record_formated = format_oai_dc($record_raw);
+        $container_name = 'oai_dc:dc';
+        $container_attributes = [
+            'xmlns:oai_dc' => "http://www.openarchives.org/OAI/2.0/oai_dc/",
+            'xmlns:dc' => "http://purl.org/dc/elements/1.1/",
+            'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
+            'xsi:schemaLocation' => 'http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd'
+        ];
+    } else if ($metadataPrefix == 'qdc') {
+        $record_formated = format_oai_qdc($record_raw);
+        $container_name = 'qdc:qualifieddc';
+        $container_attributes = [
+            'xmlns:qdc' => "http://www.bl.uk/namespaces/oai_dcq/",
+            'xmlns:dcterms' => 'http://purl.org/dc/terms/',
+            'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
+            'xsi:schemaLocation' => 'http://www.bl.uk/namespaces/oai_dcq/ http://www.bl.uk/schemas/qualifieddc/oai_dcq.xsd',
+        ];
+    }
+
+    $record['metadata'] = [
+        'container_name' => $container_name,
+        'container_attributes' => $container_attributes,
+        'fields' => $record_formated
+    ];
+
+    return $record;
 }
 
 function format_oai_dc($record) {
@@ -149,24 +164,24 @@ function format_oai_qdc($record) {
 
     # [ [from, to, [attrs], prefix ]
     $convert = [
-        ['title', 'dcterms:title'],
-        ['identifier_url', 'dcterms:identifier', ['scheme'=>'URI']],
-        ['identifier_doi', 'dcterms:identifier', ['scheme'=>'URN']],
-        ['issn', 'dcterms:isPartOf', ['scheme'=>'URN']],
-        ['eissn', 'dcterms:isPartOf', ['scheme'=>'URN']],
-        ['creator', 'dcterms:creator'],
-        ['contributor', 'dcterms:contibutor'],
-        ['accessrights', 'dcterms:accessRights'],
-        ['rights', 'dcterms:rights'],
-        ['issued', 'dcterms:issued', ['xsi:type'=>'dcterms:W3CDTF']],
-        ['embargoed', 'dcterms:available', ['xsi:type'=>'dcterms:W3CDTF']],
-        ['publisher', 'dcterms:publisher'],
-        ['language', 'dcterms:language', ['xsi:type'=>'dcterms:RFC1766']],
-        ['type', 'dcterms:type'],
-        ['extent', 'dcterms:extent'],
-        ['spatial', 'dcterms:spatial'],
-        ['temporal', 'dcterms:temporal'],
-        ['bibliographicalCitation.issue', 'dcterms:bibliographicalCitation.issue'],
+        ['title', 'dcterms:title', False, ''],
+        ['identifier_url', 'dcterms:identifier', ['scheme'=>'URI'], ''],
+        ['identifier_doi', 'dcterms:identifier', ['scheme'=>'URN'], ''],
+        ['issn', 'dcterms:isPartOf', ['scheme'=>'URN'], ''],
+        ['eissn', 'dcterms:isPartOf', ['scheme'=>'URN'], ''],
+        ['creator', 'dcterms:creator', False, ''],
+        ['contributor', 'dcterms:contibutor', False, ''],
+        ['accessrights', 'dcterms:accessRights', False, ''],
+        ['rights', 'dcterms:rights', False, ''],
+        ['issued', 'dcterms:issued', ['xsi:type'=>'dcterms:W3CDTF'], ''],
+        ['embargoed', 'dcterms:available', ['xsi:type'=>'dcterms:W3CDTF'], ''],
+        ['publisher', 'dcterms:publisher', False, ''],
+        ['language', 'dcterms:language', ['xsi:type'=>'dcterms:RFC1766'], ''],
+        ['type', 'dcterms:type', False, ''],
+        ['extent', 'dcterms:extent', False, ''],
+        ['spatial', 'dcterms:spatial', False, ''],
+        ['temporal', 'dcterms:temporal', False, ''],
+        ['bibliographicalCitation.issue', 'dcterms:bibliographicalCitation.issue', False, ''],
     ];
     foreach ($convert as $conv) {
         list ($from, $to, $attrs, $prefix) = $conv;

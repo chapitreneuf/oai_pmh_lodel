@@ -27,6 +27,26 @@ function get_records_simple($class, $type, $limit=10, $offset=0, $order='identit
     return $records;
 }
 
+# Get oai identifier of a ressource
+# TODO: add global site name
+function oai_identifier($oai_id, $id) {
+    return 'oai:' . $oai_id . '/' . $id;
+}
+
+function get_record_from_identifier($identifier) {
+    preg_match_all('@^oai:([^/]*)/(\d+)$@', $identifier, $matches, PREG_PATTERN_ORDER);
+    if (!$matches) throw new OAI2Exception('idDoesNotExist');
+
+    $oai_id = $matches[1][0];
+    $id = $matches[2][0];
+
+    connect_site('oai-pmh');
+    $record = sql_getone("SELECT * FROM `records` WHERE `oai_id` = ? AND identity = ?;", [$oai_id, $id]);
+    if (!$record) throw new OAI2Exception('idDoesNotExist');
+
+    return $record;
+}
+
 # Role:
 #   Get a full record
 # Input:

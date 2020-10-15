@@ -167,6 +167,8 @@ done
 
 ## TODO
   - put sql functions in one file
+  - better resumptionToken management
+  - better error 
   - create config
     - list size
     - baseURL
@@ -182,5 +184,5 @@ done
     - mhhhh
   - dates must be UTC
     - double check modification dates it is important for incremental harvest
-    
-     
+  - site oai-pmh must be a config (change all connect_site())
+  - ListMetadataFormats
