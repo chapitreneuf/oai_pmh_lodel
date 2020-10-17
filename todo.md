@@ -166,15 +166,16 @@ while inotifywait -r -e attrib,modify,create,delete,move .; do
 done
 
 ## TODO
-  - better resumptionToken management
-  - better error 
+  - better error description in server
   - mets
     - only for publications, numero
     - mhhhh
+    - ListMetadataFormats for mets
+  - Sets descriptions
   - dates must be UTC
     - double check modification dates it is important for incremental harvest
-  - site oai-pmh must be a config (change all connect_site())
-  - ListMetadataFormats
+  - site oai-pmh should be a config (change all connect_site())
+  - record.php functions should not have SQL query in it
 
 ## project structure
 /

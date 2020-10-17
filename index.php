@@ -8,8 +8,8 @@ $oai2 = new OAI2Server(get_conf('baseURL'), $_GET, identifyResponse(), get_conf(
             return ListMetadataFormats($identifier);
         },
 
-        'ListSets' => function($resumptionToken='') {
-            return listSets($resumptionToken);
+        'ListSets' => function($count, $maxItems=5, $resumptionToken='') {
+            return listSets($count, $maxItems, $resumptionToken);
         },
 
         'ListRecords' =>

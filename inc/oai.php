@@ -5,12 +5,23 @@
 #
 
 # TODO: need $count, $deliveredRecords, $maxItems
-function listSets($resumptionToken) {
-    $sets = array(
-        ['setSpec'=>"journals", 'setName'=>"Les super journaux de notre dépôt"]
-    );
+function listSets($count, $maxItems, $cursor=0) {
+    if ($cursor == 0) {
+        $maxItems -= 1;
+        $sets = array(
+            ['setSpec'=>"journals", 'setName'=>"Les super journaux de notre dépôt"]
+        );
+    } else {
+        $cursor -= 1;
+    }
     connect_site('oai-pmh');
-    $les_sets = get_sets();
+
+    if ($count) {
+        $les_sets = get_sets();
+        return count($les_sets)+1;
+    }
+    $les_sets = get_sets($maxItems, $cursor);
+
     foreach($les_sets as $set) {
         $sets[] = ['setSpec'=>"journals:${set['oai_id']}", 'setName'=>$set['title']];
     }
