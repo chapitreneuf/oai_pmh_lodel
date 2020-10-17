@@ -16,17 +16,6 @@ function get_set($site) {
     return sql_getone("SELECT * FROM `sets` WHERE `name` = ?;", [$site]);
 }
 
-# Role:
-#   Get a list of records from class and type
-#   With information to fill `records` table
-function get_records_simple($class, $type, $limit=10, $offset=0, $order='identity') {
-    $q = lq("SELECT `identity`, `titre`, `datemisenligne`, `dateacceslibre`, `modificationdate` FROM #_TP_$class c, #_TP_entities e, #_TP_types t WHERE c.identity = e.id AND e.idtype = t.id AND t.type = '$type' AND e.status>0 ORDER BY `$order`");
-    if ($limit) $q .=  " LIMIT $offset,$limit";
-    $records = sql_get($q.';');
-
-    return $records;
-}
-
 # Get oai identifier of a ressource
 # TODO: add global site name
 function oai_identifier($oai_id, $id) {
@@ -117,11 +106,15 @@ function get_publication_types() {
 }
 
 function _log_debug($var, $print=true) {
+    if (!get_conf('log')) return;
+
     $error = var_export($var, 1);
     _log($error, $print);
 }
 
 function _log ($var, $print=true) {
+    if (!get_conf('log')) return;
+
     if (php_sapi_name() == "cli") {
         $print = false;
     }

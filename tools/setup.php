@@ -42,9 +42,10 @@ sql_query("CREATE TABLE `sets` (
     `langueprincipale` varchar(255) DEFAULT NULL,
     `doi_prefixe` varchar(255) DEFAULT NULL,
     `openaire_access_level` varchar(255) DEFAULT NULL,
-    `upd` timestamp NOT NULL DEFAULT current_timestamp(),
+    `upd` timestamp NOT NULL,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `sets` (`set`,`name`)
+    UNIQUE KEY `name` (`name`),
+    UNIQUE KEY `sets` (`set`,`oai_id`)
 );");
 
 sql_query("DROP TABLE IF EXISTS `records`;");
@@ -59,7 +60,7 @@ sql_query("CREATE TABLE `records` (
     `class` VARCHAR(64) NOT NULL,
     `type` VARCHAR(64) NOT NULL,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `ids` (`set`,`identity`),
+    UNIQUE KEY `ids` (`oai_id`,`identity`),
     INDEX (`set`),
-    INDEX (`set`, `class`, `type`)
+    INDEX (`set`, `oai_id`)
 );");

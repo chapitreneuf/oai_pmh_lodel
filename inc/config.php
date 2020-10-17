@@ -13,6 +13,7 @@ $base_config = array(
     'adminEmail' => 'not@configur.ed',
     'earliestDatestamp' => '0000-12-24T00:00:00Z',
     'granularity' => 'YYYY-MM-DDThh:mm:ssZ',
+    'log' => false,
 //     'metadatas' => '',
 );
 

@@ -13,9 +13,6 @@ function lodel_connect () {
     $cfg['home'] = "lodel/scripts/";
     $cfg['sharedir'] = SITEROOT . $cfg['sharedir'];
     ini_set('include_path', SITEROOT. $cfg['home'] . PATH_SEPARATOR . ini_get('include_path'));
-    error_log(ini_get('include_path'));
-    error_log($cfg['sharedir']);
-    error_log(SITEROOT);
     require 'context.php';
     require 'textfunc.php';
     C::setCfg($cfg);
@@ -49,7 +46,7 @@ function connect_site($site='') {
     $current_site = $site;
     $db_name = $database_prefix . ($site ? ("_" . $site) : '');
     $GLOBALS['currentdb'] = $db_name;
-    _log("Connexion à $db_name", false);
+//     _log("Connexion à $db_name", false);
 
     # Do it ourself, lodel usecurrentdb() always return true…
     # We want to return false if error
@@ -62,7 +59,7 @@ function get_sites($status=0) {
     global $current_site;
 
     $sites = array();
-    $les_sites = sql_get(lq("SELECT title, name, url FROM #_MTP_sites WHERE status>?"), [$status]);
+    $les_sites = sql_get(lq("SELECT title, name, url, upd FROM #_MTP_sites WHERE status>?"), [$status]);
 
     foreach ($les_sites as $site) {
         connect_site($site['name']);
@@ -70,7 +67,7 @@ function get_sites($status=0) {
         # Seulement les sites avec oai_id de renseigné
         # TODO if status == 0 get site anyway
         if ($oai_id) {
-            $this_site = ['name' => $site['name'], 'title' => $site['title'], 'url' => $site['url'], 'oai_id' => $oai_id];
+            $this_site = ['name'=>$site['name'], 'title'=>$site['title'], 'url'=>$site['url'], 'oai_id'=>$oai_id, 'upd'=>$site['upd']];
             $this_site['droitsauteur'] = get_option('metadonneessite', 'droitsauteur');
             $this_site['editeur'] = get_option('metadonneessite', 'editeur');
             $this_site['titresite'] = get_option('metadonneessite', 'titresite');
@@ -104,4 +101,15 @@ function get_entity_info($class, $type='', $site='') {
         connect_site($site);
     }
     return sql_get(lq("SELECT identity, titre, datemisenligne, langue, status FROM `#_TP_$class` c, `#_TP_entities` e WHERE c.identity = e.id AND status>0"));
+}
+
+# Role:
+#   Get a list of entities from class and type
+#   With information to fill `records` table
+function get_entities($class, $type, $limit=10, $offset=0, $order='identity') {
+    $q = lq("SELECT `identity`, `titre`, `datemisenligne`, `dateacceslibre`, `modificationdate` FROM #_TP_$class c, #_TP_entities e, #_TP_types t WHERE c.identity = e.id AND e.idtype = t.id AND t.type = '$type' AND e.status>0 ORDER BY `$order`");
+    if ($limit) $q .=  " LIMIT $offset,$limit";
+    $records = sql_get($q.';');
+
+    return $records;
 }

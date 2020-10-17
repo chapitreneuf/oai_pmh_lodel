@@ -20,15 +20,32 @@ update_records();
 function update_sets() {
     connect_site();
     $sites = get_sites();
+    # TODO: test oai_id are unique
+
     connect_site('oai-pmh');
     foreach($sites as $site) {
-        _log("Set up ${site['name']}");
-        # TODO: faire un vrai update: test SELECT id from `sets` where set = ? AND name = ?; => update or insert otherwise
-        $q = "INSERT INTO `sets` (`set`, `name`, `oai_id`, `title`, `url`, `droitsauteur`, `editeur`, `titresite`, `issn`, `issn_electronique`, `langueprincipale`, `doi_prefixe`, `openaire_access_level`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE id=id;";
-        sql_query($q,
-            ['journal', $site['name'], $site['oai_id'], $site['title'], $site['url'], $site['droitsauteur'],
+        $bind = [
+            'journal', $site['name'], $site['oai_id'], $site['title'], $site['url'], $site['droitsauteur'],
             $site['editeur'], $site['titresite'], $site['issn'], $site['issn_electronique'],
-            $site['langueprincipale'], $site['doi_prefixe'], $site['openaire_access_level']]);
+            $site['langueprincipale'], $site['doi_prefixe'], $site['openaire_access_level'], $site['upd'],
+        ];
+
+        $info = sql_getone("SELECT `id`, `oai_id`, `upd` FROM `sets` WHERE `name` = ?;", [$site['name']]);
+        if ($info) {
+
+            # Always update
+            # if ($site['upd'] == $info['upd']) continue;
+
+            $q = "UPDATE `sets` SET `set`=?, `name`=?, `oai_id`=?, `title`=?, `url`=?, `droitsauteur`=?, `editeur`=?, `titresite`=?, `issn`=?, `issn_electronique`=?, `langueprincipale`=?, `doi_prefixe`=?, `openaire_access_level`=?, `upd`=? WHERE `id`=?;";
+            $bind[] = $info['id'];
+            _log("Updating ${site['name']} - ${site['oai_id']}");
+
+        } else {
+            $q = "INSERT INTO `sets` (`set`, `name`, `oai_id`, `title`, `url`, `droitsauteur`, `editeur`, `titresite`, `issn`, `issn_electronique`, `langueprincipale`, `doi_prefixe`, `openaire_access_level`, `upd`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+            _log("Inserting ${site['name']} - ${site['oai_id']}");
+        }
+
+        sql_query($q, $bind);
     }
 }
 
@@ -36,19 +53,33 @@ function update_records() {
     connect_site('oai-pmh');
     $sets = get_sets(0);
     foreach ($sets as $set) {
-        _log("Set up des records de ${set['name']}");
+        _log("Set up of ${set['name']} records");
         $publication_types = get_publication_types();
         foreach ($publication_types as $class => $types) {
             foreach ($types as $type => $stuff) {
                 connect_site($set['name']);
-                $records = get_records_simple($class, $type, 0);
+                $records = get_entities($class, $type, 0);
 
                 connect_site('oai-pmh');
                 foreach ($records as $record) {
-                    # TODO: faire un vrai update
-                    $q = "INSERT INTO `records` (`identity`, `title`, `date`, `set`, `oai_id`, `site`, `class`, `type`) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE id=id;";
-                    sql_query($q, [$record['identity'], $record['titre'], $record['modificationdate'], 'journals', $set['oai_id'], $set['name'], $class, $type]);
-                    _log("insert de $class, $type : ${record['identity']}, ${record['titre']}, ${record['modificationdate']}, ${set['oai_id']}, ${set['name']}");
+                    $bind = [$record['identity'], $record['titre'], $record['modificationdate'], 'journals', $set['oai_id'], $set['name'], $class, $type];
+
+                    $info = sql_getone("SELECT `id`, `date` FROM `records` WHERE `oai_id` = ? AND `identity` = ?;", [$set['oai_id'], $record['identity']]);
+                    if ($info) {
+                        # only update if entity has changed
+                        if ($info['date'] == $record['modificationdate']) {
+                            _log("not updating ${set['oai_id']} - ${record['identity']}");
+                            continue;
+                        }
+
+                        $q = "UPDATE `records` SET `identity`=?, `title`=?, `date`=?, `set`=?, `oai_id`=?, `site`=?, `class`=?, `type`=? WHERE id=?;";
+                        $bind[] = $info['id'];
+                        _log("Updating ${set['oai_id']} - ${record['identity']}");
+                    } else {
+                        $q = "INSERT INTO `records` (`identity`, `title`, `date`, `set`, `oai_id`, `site`, `class`, `type`) VALUES (?,?,?,?,?,?,?,?);";
+                        _log("Inserting ${set['oai_id']} - ${record['identity']}");
+                    }
+                    sql_query($q, $bind);
                 }
             }
         }
