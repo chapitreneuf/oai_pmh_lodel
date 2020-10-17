@@ -166,19 +166,8 @@ while inotifywait -r -e attrib,modify,create,delete,move .; do
 done
 
 ## TODO
-  - put sql functions in one file
   - better resumptionToken management
   - better error 
-  - create config
-    - list size
-    - baseURL
-    - adminEmail
-    - metadatas
-    - repositoryName
-    - earliestDatestamp
-    - deletedRecord
-    - global set name
-    - global set description
   - mets
     - only for publications, numero
     - mhhhh
@@ -186,3 +175,19 @@ done
     - double check modification dates it is important for incremental harvest
   - site oai-pmh must be a config (change all connect_site())
   - ListMetadataFormats
+
+## project structure
+/
+  index.php : entry point
+  config.php.txt => config.php
+  tools/
+    setup.php : database setup (or reinit)
+    update_db.php : update sets and records
+  inc/
+    init.php : load everything
+    config.php : take care of config
+    lodel.php : lodel connection
+    sql.php : sql functions
+    oai.php : oai functions
+    utils.php : other functions
+    record.php : record functions

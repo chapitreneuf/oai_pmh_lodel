@@ -9,9 +9,8 @@ if (php_sapi_name() != "cli") {
     exit(0);
 }
 
-require_once('lodel_connect.php');
-require_once('utils.php');
-lodel_init();
+require_once('inc/init.php');
+
 connect_site('oai-pmh') or die("Could not connect to oai-pmh, have you launched setup.php ?");
 
 update_sets();
@@ -19,8 +18,9 @@ update_records();
 # TODO: delete records and sets that does not exists anymore
 
 function update_sets() {
-    # TODO: connect to database before
+    connect_site();
     $sites = get_sites();
+    connect_site('oai-pmh');
     foreach($sites as $site) {
         _log("Set up ${site['name']}");
         # TODO: faire un vrai update: test SELECT id from `sets` where set = ? AND name = ?; => update or insert otherwise

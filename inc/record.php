@@ -1,52 +1,5 @@
 <?php
 
-# MUST be connected to oai-pmh
-function get_sets ($limit=10, $offset=0, $order='id') {
-    $q = "SELECT `set`, `oai_id`, `name`, `title` FROM `sets` ORDER BY `$order`";
-    if ($limit) $q .=  " LIMIT $offset,$limit";
-    $sets = sql_get($q.';');
-
-    return $sets;
-}
-
-# Role:
-#   Get a single set info
-# MUST be connected to oai-pmh
-function get_set($site) {
-    return sql_getone("SELECT * FROM `sets` WHERE `name` = ?;", [$site]);
-}
-
-# Role:
-#   Get a list of records from class and type
-#   With information to fill `records` table
-function get_records_simple($class, $type, $limit=10, $offset=0, $order='identity') {
-    $q = lq("SELECT `identity`, `titre`, `datemisenligne`, `dateacceslibre`, `modificationdate` FROM #_TP_$class c, #_TP_entities e, #_TP_types t WHERE c.identity = e.id AND e.idtype = t.id AND t.type = '$type' AND e.status>0 ORDER BY `$order`");
-    if ($limit) $q .=  " LIMIT $offset,$limit";
-    $records = sql_get($q.';');
-
-    return $records;
-}
-
-# Get oai identifier of a ressource
-# TODO: add global site name
-function oai_identifier($oai_id, $id) {
-    return 'oai:' . $oai_id . '/' . $id;
-}
-
-function get_record_from_identifier($identifier) {
-    preg_match_all('@^oai:([^/]*)/(\d+)$@', $identifier, $matches, PREG_PATTERN_ORDER);
-    if (!$matches) throw new OAI2Exception('idDoesNotExist');
-
-    $oai_id = $matches[1][0];
-    $id = $matches[2][0];
-
-    connect_site('oai-pmh');
-    $record = sql_getone("SELECT * FROM `records` WHERE `oai_id` = ? AND identity = ?;", [$oai_id, $id]);
-    if (!$record) throw new OAI2Exception('idDoesNotExist');
-
-    return $record;
-}
-
 # Role:
 #   Get a full record
 # Input:
@@ -54,6 +7,7 @@ function get_record_from_identifier($identifier) {
 #   $class: class of the record
 #   $id: id entity of the record
 # MUST be connected to $set['name']
+# TODO: ideally should not query DB
 function get_record($set, $class, $id) {
     # Get lodel record for this entity
     $rec = sql_getone(lq("SELECT c.*, t.type FROM #_TP_$class c, #_TP_entities e, #_TP_types t WHERE e.idtype = t.id AND c.identity = e.id AND identity=?;"), [$id]);
@@ -227,71 +181,154 @@ function get_record($set, $class, $id) {
     return $record;
 }
 
-function get_persons($id, $type) {
-    $pers = sql_get(
-        lq("SELECT g_firstname,g_familyname FROM #_TP_relations r, #_TP_persons p, #_TP_persontypes pt WHERE r.id1=? AND r.id2=p.id AND nature='G' AND p.idtype=pt.id AND type=? ORDER BY `degree`;"),
-        [$id, $type]
-    );
-    $persons = array();
-    foreach ($pers as $p) {
-        $persons[] = $p['g_familyname'] . ', ' . $p['g_firstname'];
-    }
-
-    return $persons;
-}
-
-# Role:
-#   get ids of all children (recursive)
-function get_children($id) {
-    $ids = array();
-
-    $children = sql_get(lq("SELECT id FROM #_TP_entities WHERE idparent=?;"), [$id]);
-    foreach ($children as $i) {
-        $ids[] = $i['id'];
-        $ids = array_merge(get_children($i['id']), $ids);
-    }
-
-    return $ids;
-}
-
-# Role:
-#   get indexes of a type attach to an entity
-#   if type contains a % will search with SQL LIKE
-# Input:
-#   $id: id of entity
-#   $type: type of index
-function get_index($id, $type) {
-    $sql_type = strpos($type, '%') === false ? 't.`type` = ?' : 't.`type` LIKE ?';
-    $entries = sql_get(lq("SELECT e.g_name, t.type FROM #_TP_relations r, #_TP_entries e, #_TP_entrytypes t WHERE t.class='indexes' AND r.id1=? AND r.id2=e.id AND t.id=e.idtype AND nature='E' AND $sql_type ORDER BY t.`rank`, r.`degree`;"), [$id, $type]);
-    return $entries;
-}
-
-# Role:
-#   return oai or openaire type of a publication
-# Input:
-#   $class: lodel class of the publication
-#   $type: lodel type of the publication
-#   $set: oai or openaire
-# Output:
-#   $type: string of type of publication
-function convert_type($class, $type, $set='oai') {
-    $types = get_publication_types();
-    return get_publication_types()[$class][$type][$set];
-}
-
-# TODO: this should be a config (or at least extendable)
-function get_publication_types() {
-    return [
-        'publications' => [
-            'numero' => ['oai'=>'issue', 'openaire'=> 'other'],
-            'souspartie' => ['oai'=>'part', 'openaire'=> 'other'],
-        ],
-        'textes' => [
-            'article' => ['oai'=>'article', 'openaire'=> 'article'],
-            'chronique' => ['oai'=>'article', 'openaire'=> 'other'],
-            'compterendu' => ['oai'=>'review', 'openaire'=> 'review'],
-            'notedelecture' => ['oai'=>'review', 'openaire'=> 'review'],
-            'editorial' => ['oai'=>'introduction', 'openaire'=> 'article'],
-        ],
+# Create an OAI record
+# TODO: ideally should not query DB
+function create_record($record_info, $metadataPrefix, $full) {
+    $record = [
+        'identifier' => oai_identifier($record_info['oai_id'], $record_info['identity']),
+        'datestamp' => $record_info['date'],
+        # TODO: create a function for that
+        'set' => $record_info['set'] . ':' . $record_info['oai_id'],
     ];
+
+    if (!$full) return $record;
+
+    # Only search for all informations if ListRecords
+    connect_site('oai-pmh');
+    $set = get_set($record_info['site']);
+
+    connect_site($record_info['site']);
+    $record_raw = get_record($set, $record_info['class'], $record_info['identity']);
+
+    if ($metadataPrefix == 'oai_dc') {
+        $record_formated = format_oai_dc($record_raw);
+        $container_name = 'oai_dc:dc';
+        $container_attributes = [
+            'xmlns:oai_dc' => "http://www.openarchives.org/OAI/2.0/oai_dc/",
+            'xmlns:dc' => "http://purl.org/dc/elements/1.1/",
+            'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
+            'xsi:schemaLocation' => 'http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd'
+        ];
+    } else if ($metadataPrefix == 'qdc') {
+        $record_formated = format_oai_qdc($record_raw);
+        $container_name = 'qdc:qualifieddc';
+        $container_attributes = [
+            'xmlns:qdc' => "http://www.bl.uk/namespaces/oai_dcq/",
+            'xmlns:dcterms' => 'http://purl.org/dc/terms/',
+            'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
+            'xsi:schemaLocation' => 'http://www.bl.uk/namespaces/oai_dcq/ http://www.bl.uk/schemas/qualifieddc/oai_dcq.xsd',
+        ];
+    }
+
+    $record['metadata'] = [
+        'container_name' => $container_name,
+        'container_attributes' => $container_attributes,
+        'fields' => $record_formated
+    ];
+
+    return $record;
 }
+
+function format_oai_dc($record) {
+    $convert = [
+        'title' => 'dc:title',
+        'identifier_url' => 'dc:identifier',
+        'identifier_doi' => 'dc:identifier',
+        'creator' => 'dc:creator',
+        'contributor' => 'dc:contibutor',
+        'rights' => 'dc:rights',
+        'accessrights' => 'dc:rights',
+        'issued' => 'dc:date',
+        'embargoed' => 'dc:date',
+        'publisher' => 'dc:publisher',
+        'language' => 'dc:language',
+        'type' => 'dc:type',
+        'coverage' => 'dc:coverage',
+        'issn' => 'dc:relation',
+        'eissn' => 'dc:relation',
+    ];
+    foreach ($convert as $from => $to) {
+        if (!empty($record[$from])) {
+            if (is_array($record[$from])) {
+                $oai[$to] = $record[$from];
+            } else {
+                $oai[$to][] = $record[$from];
+            }
+        }
+    }
+
+    $convert_lang = [
+        ['subjects', 'dc:subjects'],
+        ['abstract', 'dc:description'],
+        ['description', 'dc:description'],
+    ];
+    foreach ($convert_lang as $conv) {
+        list($from, $to) = $conv;
+        if (!empty($record[$from])) {
+            foreach ($record[$from] as $fields) {
+                $oai[$to][] = [$fields[0], ['xml:lang'=>$fields[1]]];
+            }
+        }
+    }
+
+    return $oai;
+}
+
+function format_oai_qdc($record) {
+    # TODO some value in record must be prefixed
+
+    # [ [from, to, [attrs], prefix ]
+    $convert = [
+        ['title', 'dcterms:title', False, ''],
+        ['identifier_url', 'dcterms:identifier', ['scheme'=>'URI'], ''],
+        ['identifier_doi', 'dcterms:identifier', ['scheme'=>'URN'], ''],
+        ['issn', 'dcterms:isPartOf', ['scheme'=>'URN'], ''],
+        ['eissn', 'dcterms:isPartOf', ['scheme'=>'URN'], ''],
+        ['creator', 'dcterms:creator', False, ''],
+        ['contributor', 'dcterms:contibutor', False, ''],
+        ['accessrights', 'dcterms:accessRights', False, ''],
+        ['rights', 'dcterms:rights', False, ''],
+        ['issued', 'dcterms:issued', ['xsi:type'=>'dcterms:W3CDTF'], ''],
+        ['embargoed', 'dcterms:available', ['xsi:type'=>'dcterms:W3CDTF'], ''],
+        ['publisher', 'dcterms:publisher', False, ''],
+        ['language', 'dcterms:language', ['xsi:type'=>'dcterms:RFC1766'], ''],
+        ['type', 'dcterms:type', False, ''],
+        ['extent', 'dcterms:extent', False, ''],
+        ['spatial', 'dcterms:spatial', False, ''],
+        ['temporal', 'dcterms:temporal', False, ''],
+        ['bibliographicalCitation.issue', 'dcterms:bibliographicalCitation.issue', False, ''],
+    ];
+    foreach ($convert as $conv) {
+        list ($from, $to, $attrs, $prefix) = $conv;
+        if (!empty($record[$from])) {
+            if (is_array($record[$from])) {
+                $oai[$to] = $record[$from];
+            } else {
+                if ($attrs) {
+                    $oai[$to][] = [$record[$from], $attrs];
+                } else {
+                    $oai[$to][] = $record[$from];
+                }
+            }
+        }
+    }
+
+//     $oai['dcterms:hasFormat              '] = $record['?'];
+
+    $convert_lang = [
+        ['alternative', 'dcterms:alternative'],
+        ['subjects', 'dcterms:subjects'],
+        ['abstract', 'dcterms:abstract'],
+        ['description', 'dcterms:description'],
+    ];
+    foreach ($convert_lang as $conv) {
+        list($from, $to) = $conv;
+        if (!empty($record[$from])) {
+            foreach ($record[$from] as $fields) {
+                $oai[$to][] = [$fields[0], ['xml:lang'=>$fields[1]]];
+            }
+        }
+    }
+
+    return $oai;
+};

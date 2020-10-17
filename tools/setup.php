@@ -12,8 +12,7 @@ if (php_sapi_name() != "cli") {
     exit(0);
 }
 
-require_once('lodel_connect.php');
-lodel_init();
+require_once('inc/init.php');
 
 global $database_prefix;
 if (!connect_site('oai-pmh')) {

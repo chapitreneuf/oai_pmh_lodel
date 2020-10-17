@@ -4,7 +4,7 @@ global $database_prefix;
 global $current_site;
 
 # Connexion à lodel
-function lodel_init () {
+function lodel_connect () {
     global $database_prefix;
     define('backoffice-lodeladmin', true);
     require_once '../lodelconfig.php';
@@ -61,11 +61,6 @@ function connect_site($site='') {
 function get_sites($status=0) {
     global $current_site;
 
-    # Save current site name then connect to main
-    # TODO: delete auto connexion
-    $previous_site = $current_site;
-    connect_site();
-
     $sites = array();
     $les_sites = sql_get(lq("SELECT title, name, url FROM #_MTP_sites WHERE status>?"), [$status]);
 
@@ -89,9 +84,6 @@ function get_sites($status=0) {
         }
     }
 
-    # connect back
-    connect_site($previous_site);
-
     return $sites;
 }
 
@@ -112,60 +104,4 @@ function get_entity_info($class, $type='', $site='') {
         connect_site($site);
     }
     return sql_get(lq("SELECT identity, titre, datemisenligne, langue, status FROM `#_TP_$class` c, `#_TP_entities` e WHERE c.identity = e.id AND status>0"));
-}
-
-# Role:
-#   Query and return a statement
-function sql_query($q, $params=false) {
-    global $db;
-
-    # TODO make sure to setFetchMode(ADODB_FETCH_ASSOC)
-    $stmt = $db->execute($q, $params);
-    $err = $db->errorMsg();
-
-    if ($err) {
-        _log("Error with query $q");
-        _log_debug($params);
-        _log_debug($err);
-        _log_debug($stmt);
-        return false;
-    }
-
-    return $stmt;
-}
-
-# Role:
-#   Query and return array of results
-function sql_get($q, $params=false) {
-    $stmt = sql_query($q, $params);
-    if (!$stmt) return false;
-    # TODO use a loop and fetchRow
-    # if $column is given, indexed by column
-    return $stmt->GetAll();
-}
-
-# Role:
-#   Query and return first row, or value of first row if given
-function sql_getone($q, $params=false, $value=false) {
-    $rows = sql_get($q, $params);
-    if ($rows) {
-        if ($value) return $rows[0][$value];
-        return $rows[0];
-    }
-    return false;
-}
-
-function _log_debug($var, $print=true) {
-    $error = var_export($var, 1);
-    _log($error, $print);
-}
-
-function _log ($var, $print=true) {
-    if (php_sapi_name() == "cli") {
-        $print = false;
-    }
-    if ($print) {
-        print "<p>$var</p>";
-    }
-    error_log($var);
 }

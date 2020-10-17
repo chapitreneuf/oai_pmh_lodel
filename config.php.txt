@@ -1,0 +1,16 @@
+<?php
+global $config;
+
+#
+# To start server copy this file as config.php and edit values of the array
+# You can see all possible configuration keys in inc/config.php $base_config
+#
+
+$config = array(
+    'baseURL' => 'https://your.url/',
+    'adminEmail' => 'your@email.org',
+    'repositoryName' => 'Name of repository',
+    'earliestDatestamp' => '2013-01-01T12:00:00Z',
+    'setsName' => 'journals',
+    'setDescription' => 'Your awesome collection',
+);
