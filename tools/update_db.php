@@ -13,9 +13,10 @@ require_once('inc/init.php');
 
 connect_site('oai-pmh') or die("Could not connect to oai-pmh, have you launched setup.php ?");
 
+delete_sets();
+delete_records();
 update_sets();
 update_records();
-# TODO: delete records and sets that does not exists anymore
 
 function update_sets() {
     connect_site();
@@ -86,18 +87,63 @@ function update_records() {
     }
 }
 
-/* TODO : delete old records
-    delete site
-    ask for all sites, index in hash by id
-    get all of our sites
-    foreach our site if not in index
-        delete our site
-        delete all entries in record
-    delete records
-    ask for our set
-    get all records from this set (0,1000) order by identity
-    sql from entities identity in () status > 0
-    if list is 1000 next
-    index in hash by identity
-    loop on our record, delete if not exists
-*/
+function delete_sets() {
+    connect_site();
+    $sites = get_sites();
+    foreach ($sites as $site) {
+        $site_names[] = $site['name'];
+    }
+
+    connect_site('oai-pmh');
+    $sets = sql_get("SELECT name FROM `sets`;");
+    foreach($sets as $set) {
+        $set_names[] = $set['name'];
+    }
+
+    $to_delete = array_diff($set_names, $site_names);
+    foreach ($to_delete as $set) {
+        delete_set($set);
+    }
+}
+
+function delete_set($name) {
+    # Delete from sets and records table
+    sql_query("DELETE FROM `sets` WHERE `name`=?;", [$name]);
+    sql_query("DELETE FROM `records` WHERE `site`=?;", [$name]);
+    _log("Deleted set and all records of site $name");
+}
+
+function delete_records() {
+    $batch = 500;
+    connect_site('oai-pmh');
+    $sets = get_sets(0);
+    foreach ($sets as $set) {
+        $start = 0;
+        while ($records = sql_get("SELECT `identity` FROM `records` WHERE `oai_id` = ? LIMIT ?,?;", [$set['oai_id'], $start, $batch])) {
+            foreach ($records as $record) {
+                $record_ids[] = $record['identity'];
+            }
+
+            connect_site($set['name']);
+            $entities = sql_get(lq('SELECT id FROM #_TP_entities WHERE id IN ('.join(',',$record_ids).') AND status > 0'));
+            foreach ($entities as $entity) {
+                $entity_ids[] = $entity['id'];
+            }
+
+            $to_delete = array_diff($record_ids, $entity_ids);
+            if ($to_delete) {
+                delete_record($set['name'], $to_delete);
+            }
+
+            connect_site('oai-pmh');
+            $start += $batch;
+        }
+    }
+}
+
+function delete_record($site, $ids) {
+    connect_site('oai-pmh');
+    $in = join(',', $ids);
+    _log("Deleting records from $site : $in");
+    sql_query("DELETE FROM `records` WHERE `site`=? AND identity IN ($in);", [$site]);
+}
