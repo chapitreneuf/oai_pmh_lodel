@@ -63,7 +63,8 @@ function update_records() {
 
                 connect_site('oai-pmh');
                 foreach ($records as $record) {
-                    $bind = [$record['identity'], $record['titre'], $record['modificationdate'], 'journals', $set['oai_id'], $set['name'], $class, $type];
+                    $openaire = !empty($set['openaire_access_level']) ? $set['openaire_access_level'] : ''; # openAccess, embargoedAccess, restrictedAccess
+                    $bind = [$record['identity'], $record['titre'], $record['modificationdate'], 'journals', $set['oai_id'], $openaire, $set['name'], $class, $type];
 
                     $info = sql_getone("SELECT `id`, `date` FROM `records` WHERE `oai_id` = ? AND `identity` = ?;", [$set['oai_id'], $record['identity']]);
                     if ($info) {
@@ -73,11 +74,11 @@ function update_records() {
                             continue;
                         }
 
-                        $q = "UPDATE `records` SET `identity`=?, `title`=?, `date`=?, `set`=?, `oai_id`=?, `site`=?, `class`=?, `type`=? WHERE id=?;";
+                        $q = "UPDATE `records` SET `identity`=?, `title`=?, `date`=?, `set`=?, `oai_id`=?, `openaire`=?, `site`=?, `class`=?, `type`=? WHERE id=?;";
                         $bind[] = $info['id'];
                         _log("Updating ${set['oai_id']} - ${record['identity']}");
                     } else {
-                        $q = "INSERT INTO `records` (`identity`, `title`, `date`, `set`, `oai_id`, `site`, `class`, `type`) VALUES (?,?,?,?,?,?,?,?);";
+                        $q = "INSERT INTO `records` (`identity`, `title`, `date`, `set`, `oai_id`, `openaire`, `site`, `class`, `type`) VALUES (?,?,?,?,?,?,?,?,?);";
                         _log("Inserting ${set['oai_id']} - ${record['identity']}");
                     }
                     sql_query($q, $bind);
@@ -89,12 +90,14 @@ function update_records() {
 
 function delete_sets() {
     connect_site();
+    $site_names = [];
     $sites = get_sites();
     foreach ($sites as $site) {
         $site_names[] = $site['name'];
     }
 
     connect_site('oai-pmh');
+    $set_names = [];
     $sets = sql_get("SELECT name FROM `sets`;");
     foreach($sets as $set) {
         $set_names[] = $set['name'];
@@ -120,12 +123,14 @@ function delete_records() {
     foreach ($sets as $set) {
         $start = 0;
         while ($records = sql_get("SELECT `identity` FROM `records` WHERE `oai_id` = ? LIMIT ?,?;", [$set['oai_id'], $start, $batch])) {
+            $record_ids = [];
             foreach ($records as $record) {
                 $record_ids[] = $record['identity'];
             }
 
             connect_site($set['name']);
             $entities = sql_get(lq('SELECT id FROM #_TP_entities WHERE id IN ('.join(',',$record_ids).') AND status > 0'));
+            $entity_ids = [];
             foreach ($entities as $entity) {
                 $entity_ids[] = $entity['id'];
             }

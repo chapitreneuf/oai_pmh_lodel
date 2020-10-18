@@ -187,12 +187,15 @@ function create_record($record_info, $metadataPrefix, $full) {
     $record = [
         'identifier' => oai_identifier($record_info['oai_id'], $record_info['identity']),
         'datestamp' => $record_info['date'],
-        # TODO: create a function for that
         'set' => [
             $record_info['set'],
             $record_info['set'] . ':' . $record_info['oai_id']
         ],
     ];
+    # add openaire set
+    if ($record_info['openaire'] == 'openAccess') {
+        $record['set'][] = 'openaire';
+    }
 
     if (!$full) return $record;
 

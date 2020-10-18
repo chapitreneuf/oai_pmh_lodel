@@ -56,11 +56,13 @@ sql_query("CREATE TABLE `records` (
     `date` timestamp NOT NULL,
     `set` VARCHAR(64) NOT NULL,
     `oai_id` VARCHAR(64) NOT NULL,
+    `openaire` VARCHAR(64) NOT NULL,
     `site` VARCHAR(64) NOT NULL,
     `class` VARCHAR(64) NOT NULL,
     `type` VARCHAR(64) NOT NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `ids` (`oai_id`,`identity`),
     INDEX (`set`),
+    INDEX (`openaire`),
     INDEX (`set`, `oai_id`)
 );");

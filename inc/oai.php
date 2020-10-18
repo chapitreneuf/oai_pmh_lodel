@@ -47,10 +47,20 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records
         $bind[] = $until;
     }
     if (!empty($set)) {
-        list ($set_id, $oai_id) = split(':', $set);
-        $wheres[] = '`set` = ? AND `oai_id` = ?';
-        $bind[] = $set_id;
-        $bind[] = $oai_id;
+        $sets = explode(':', $set);
+        if (empty($sets[1])) {
+            if ($sets[0] == 'openaire') {
+                $wheres[] = '`openaire` = ?';
+                $bind[] = 'openAccess';
+            } else {
+                $wheres[] = '`set` = ?';
+                $bind[] = $sets[0];
+            }
+        } else {
+            $wheres[] = '`set` = ? AND `oai_id` = ?';
+            $bind[] = $sets[0];
+            $bind[] = $sets[1];
+        }
     } else {
         $wheres[] = '`set` = ?';
         $bind[] = 'journals';
@@ -68,7 +78,7 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records
     $bind[] = intval($deliveredRecords);
     $bind[] = intval($maxItems);
 
-    $record_list = sql_get('SELECT `site`, `class`, `identity`, `date`, `set`, `oai_id` FROM records WHERE '.$where.' ORDER BY id LIMIT ?,?;', $bind);
+    $record_list = sql_get('SELECT `site`, `class`, `identity`, `date`, `set`, `oai_id`, `openaire` FROM records WHERE '.$where.' ORDER BY id LIMIT ?,?;', $bind);
 //     _log_debug($record_list);
 
     foreach ($record_list as $record_info) {
