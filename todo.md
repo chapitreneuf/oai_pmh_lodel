@@ -177,6 +177,7 @@ done
   - site oai-pmh should be a config (change all connect_site())
   - record.php functions should not have SQL query in it
   - openaire
+  - ListIdenfier, GetRecord : show all sets (journals, journals:site, and openaire)
 
 ## project structure
 /

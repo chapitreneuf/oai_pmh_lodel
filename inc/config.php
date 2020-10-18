@@ -3,7 +3,7 @@ global $config;
 
 # Default configuration
 $base_config = array(
-    'listSize' => 5,
+    'listSize' => 10,
     'setsName' => 'journals',
     'setDescription' => 'Our beautiful journals collection',
     'deletedRecord' => 'no',
