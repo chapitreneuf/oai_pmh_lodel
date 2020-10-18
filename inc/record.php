@@ -124,6 +124,7 @@ function get_record($set, $class, $id) {
                 $description = removenotes($text[2]);
                 $description = strip_tags($description);
                 $description = html_entity_decode($description);
+                $description = htmlspecialchars($description);
                 $record['abstract'][] = [$description, $text[1]];
             }
         } elseif (!empty($rec['texte'])) {
@@ -132,6 +133,7 @@ function get_record($set, $class, $id) {
             $texte = strip_tags($texte);
             $texte = html_entity_decode($texte);
             $texte = cuttext($texte, 500) . ' …';
+            $texte = htmlspecialchars($texte);
             $record['description'][] = [$texte, $record['language']];
         }
 
@@ -142,6 +144,7 @@ function get_record($set, $class, $id) {
                 $description = removenotes($text[2]);
                 $description = strip_tags($description);
                 $description = html_entity_decode($description);
+                $description = htmlspecialchars($description);
                 $record['abstract'][] = [$description, $text[1]];
             }
     }
