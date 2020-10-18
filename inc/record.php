@@ -82,7 +82,7 @@ function get_record($set, $class, $id) {
     # TYPE
     #
     $record['type'][] = convert_type($class, $rec['type'], 'oai');
-    $record['type'][] = 'info:eu-repo/semantics/' . convert_type($class, $rec['type'], 'openaire');
+    $record['type'][] = 'info:eu-repo/semantics/' . convert_type($class, $rec['type'], 'openaire'); # TODO not for qdc ?
 
     #
     # COVERAGE
@@ -149,8 +149,8 @@ function get_record($set, $class, $id) {
     #
     # RELATION
     #
-    if (!empty($set['issn'])) $record['issn'] = 'info:eu-repo/semantics/reference/issn/' . $set['issn'];
-    if (!empty($set['issn_electronique'])) $record['eissn'] = 'info:eu-repo/semantics/reference/issn/' . $set['issn_electronique'];
+    if (!empty($set['issn'])) $record['issn'] = $set['issn'];
+    if (!empty($set['issn_electronique'])) $record['eissn'] = $set['issn_electronique'];
 
     #
     # ALTERNATIVE
@@ -174,7 +174,7 @@ function get_record($set, $class, $id) {
     #
     if ($class == 'publications' && !empty($rec['numerometas'])) {
         $record['bibliographicCitation.issue'] = $rec['numerometas'];
-        # TODO bibliographicCitation.volume
+        # TODO bibliographicCitation.volume qdc ?
     }
 
 //     _log_debug($record);
@@ -230,29 +230,31 @@ function create_record($record_info, $metadataPrefix, $full) {
 }
 
 function format_oai_dc($record) {
+    # [ [from, to, prefix ]
     $convert = [
-        'title' => 'dc:title',
-        'identifier_url' => 'dc:identifier',
-        'identifier_doi' => 'dc:identifier',
-        'creator' => 'dc:creator',
-        'contributor' => 'dc:contibutor',
-        'rights' => 'dc:rights',
-        'accessrights' => 'dc:rights',
-        'issued' => 'dc:date',
-        'embargoed' => 'dc:date',
-        'publisher' => 'dc:publisher',
-        'language' => 'dc:language',
-        'type' => 'dc:type',
-        'coverage' => 'dc:coverage',
-        'issn' => 'dc:relation',
-        'eissn' => 'dc:relation',
+        ['title', 'dc:title', ''],
+        ['identifier_url', 'dc:identifier', ''],
+        ['identifier_doi', 'dc:identifier', ''],
+        ['creator', 'dc:creator', ''],
+        ['contributor', 'dc:contibutor', ''],
+        ['rights', 'dc:rights', ''],
+        ['accessrights', 'dc:rights', ''],
+        ['issued', 'dc:date', ''],
+        ['embargoed', 'dc:date', 'info:eu-repo/date/embargoEnd/'],
+        ['publisher', 'dc:publisher', ''],
+        ['language', 'dc:language', ''],
+        ['type', 'dc:type', ''],
+        ['coverage', 'dc:coverage', ''],
+        ['issn', 'dc:relation', 'info:eu-repo/semantics/reference/issn/'],
+        ['eissn', 'dc:relation', 'info:eu-repo/semantics/reference/issn/'],
     ];
-    foreach ($convert as $from => $to) {
+    foreach ($convert as $conv) {
+        list ($from, $to, $prefix) = $conv;
         if (!empty($record[$from])) {
             if (is_array($record[$from])) {
                 $oai[$to] = $record[$from];
             } else {
-                $oai[$to][] = $record[$from];
+                $oai[$to][] = $prefix . $record[$from];
             }
         }
     }
@@ -282,8 +284,8 @@ function format_oai_qdc($record) {
         ['title', 'dcterms:title', False, ''],
         ['identifier_url', 'dcterms:identifier', ['scheme'=>'URI'], ''],
         ['identifier_doi', 'dcterms:identifier', ['scheme'=>'URN'], ''],
-        ['issn', 'dcterms:isPartOf', ['scheme'=>'URN'], ''],
-        ['eissn', 'dcterms:isPartOf', ['scheme'=>'URN'], ''],
+        ['issn', 'dcterms:isPartOf', ['scheme'=>'URN'], 'urn:issn:'],
+        ['eissn', 'dcterms:isPartOf', ['scheme'=>'URN'], 'urn:eissn:'],
         ['creator', 'dcterms:creator', False, ''],
         ['contributor', 'dcterms:contibutor', False, ''],
         ['accessrights', 'dcterms:accessRights', False, ''],
@@ -305,9 +307,9 @@ function format_oai_qdc($record) {
                 $oai[$to] = $record[$from];
             } else {
                 if ($attrs) {
-                    $oai[$to][] = [$record[$from], $attrs];
+                    $oai[$to][] = [$prefix . $record[$from], $attrs];
                 } else {
-                    $oai[$to][] = $record[$from];
+                    $oai[$to][] = $prefix . $record[$from];
                 }
             }
         }

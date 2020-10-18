@@ -176,6 +176,7 @@ done
     - double check modification dates it is important for incremental harvest
   - site oai-pmh should be a config (change all connect_site())
   - record.php functions should not have SQL query in it
+  - openaire
 
 ## project structure
 /
