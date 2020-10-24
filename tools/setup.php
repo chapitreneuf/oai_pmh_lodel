@@ -33,6 +33,8 @@ sql_query("CREATE TABLE `sets` (
     `oai_id` VARCHAR(64) NOT NULL,
     `name` VARCHAR(64) NOT NULL,
     `title` VARCHAR(64) NOT NULL,
+    `description` text NOT NULL,
+    `subject` text NOT NULL,
     `url` tinytext DEFAULT NULL,
     `droitsauteur` varchar(255) DEFAULT NULL,
     `editeur` varchar(255) DEFAULT NULL,

@@ -2,7 +2,7 @@
 
 # MUST be connected to oai-pmh
 function get_sets ($limit=10, $offset=0, $order='id') {
-    $q = "SELECT `set`, `oai_id`, `openaire_access_level`, `name`, `title` FROM `sets` ORDER BY `$order`";
+    $q = "SELECT * FROM `sets` ORDER BY `$order`";
     if ($limit) $q .=  " LIMIT $offset,$limit";
     $sets = sql_get($q.';');
 

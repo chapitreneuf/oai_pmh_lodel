@@ -7,12 +7,13 @@
 # TODO: need $count, $deliveredRecords, $maxItems
 function listSets($count, $maxItems, $cursor=0) {
     if ($cursor == 0) {
-        $maxItems -= 1;
+        $maxItems -= 2;
         $sets = array(
-            ['setSpec'=>"journals", 'setName'=>"Les super journaux de notre dépôt"]
+            ['setSpec'=>"journals", 'setName'=>"Les super journaux de notre dépôt"],
+            ['setSpec'=>"openaire", 'setName'=>"openaire"]
         );
     } else {
-        $cursor -= 1;
+        $cursor -= 2;
     }
     connect_site('oai-pmh');
 
@@ -23,7 +24,32 @@ function listSets($count, $maxItems, $cursor=0) {
     $les_sets = get_sets($maxItems, $cursor);
 
     foreach($les_sets as $set) {
-        $sets[] = ['setSpec'=>"journals:${set['oai_id']}", 'setName'=>$set['title']];
+        $this_set = ['setSpec'=>"journals:${set['oai_id']}", 'setName'=>$set['title']];
+        if (!empty($set['description']) || !empty($set['issn']) || !empty($set['issn_electronique']) || !empty($set['subject']) ) {
+            $this_set['setDescription'] = [
+                'container_name' => 'oai_dc:dc',
+                'container_attributes' => [
+                    'xmlns:oai_dc' => "http://www.openarchives.org/OAI/2.0/oai_dc/",
+                    'xmlns:dc' => "http://purl.org/dc/elements/1.1/",
+                    'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
+                    'xsi:schemaLocation' => 'http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd',
+                ],
+            ];
+            if (!empty($set['description']))
+                $this_set['setDescription']['fields']['dc:description'][] = [$set['description'], ['xml:lang'=>$set['langueprincipale']]];
+            if (!empty($set['url']))
+                $this_set['setDescription']['fields']['dc:identifier'][] = 'uri:' . $set['url'];
+            if (!empty($set['issn']))
+                $this_set['setDescription']['fields']['dc:identifier'][] = 'urn:' . $set['issn'];
+            if (!empty($set['issn_electronique']))
+               $this_set['setDescription']['fields']['dc:identifier'][] = 'urn:' . $set['issn_electronique'];
+            if (!empty($set['subject'])) {
+                foreach (explode(',', $set['subject']) as $subject) {
+                    $this_set['setDescription']['fields']['dc:subject'][] = trim($subject);
+                }
+            }
+        }
+        $sets[] = $this_set;
     }
     return $sets;
 }

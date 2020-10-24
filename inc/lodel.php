@@ -68,9 +68,12 @@ function get_sites($status=0) {
         # TODO if status == 0 get site anyway
         if ($oai_id) {
             $this_site = ['name'=>$site['name'], 'title'=>$site['title'], 'url'=>$site['url'], 'oai_id'=>$oai_id, 'upd'=>$site['upd']];
+            $description = get_option('metadonneessite', 'descriptionsite');
+            $this_site['description'] = htmlspecialchars(html_entity_decode(strip_tags($description)));
+            $this_site['subject'] = htmlspecialchars(get_option('metadonneessite', 'motsclesdusite'));
             $this_site['droitsauteur'] = get_option('metadonneessite', 'droitsauteur');
-            $this_site['editeur'] = get_option('metadonneessite', 'editeur');
-            $this_site['titresite'] = get_option('metadonneessite', 'titresite');
+            $this_site['editeur'] = htmlspecialchars(get_option('metadonneessite', 'editeur'));
+            $this_site['titresite'] = htmlspecialchars(get_option('metadonneessite', 'titresite'));
             $this_site['issn'] = get_option('metadonneessite', 'issn');
             $this_site['issn_electronique'] = get_option('metadonneessite', 'issn_electronique');
             $this_site['langueprincipale'] = get_option('metadonneessite', 'langueprincipale');

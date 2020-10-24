@@ -26,7 +26,7 @@ function update_sets() {
     connect_site('oai-pmh');
     foreach($sites as $site) {
         $bind = [
-            'journal', $site['name'], $site['oai_id'], $site['title'], $site['url'], $site['droitsauteur'],
+            'journal', $site['name'], $site['oai_id'], $site['title'], $site['description'], $site['subject'], $site['url'], $site['droitsauteur'],
             $site['editeur'], $site['titresite'], $site['issn'], $site['issn_electronique'],
             $site['langueprincipale'], $site['doi_prefixe'], $site['openaire_access_level'], $site['upd'],
         ];
@@ -37,12 +37,12 @@ function update_sets() {
             # Always update
             # if ($site['upd'] == $info['upd']) continue;
 
-            $q = "UPDATE `sets` SET `set`=?, `name`=?, `oai_id`=?, `title`=?, `url`=?, `droitsauteur`=?, `editeur`=?, `titresite`=?, `issn`=?, `issn_electronique`=?, `langueprincipale`=?, `doi_prefixe`=?, `openaire_access_level`=?, `upd`=? WHERE `id`=?;";
+            $q = "UPDATE `sets` SET `set`=?, `name`=?, `oai_id`=?, `title`=?, `description`=?, `subject`=?, `url`=?, `droitsauteur`=?, `editeur`=?, `titresite`=?, `issn`=?, `issn_electronique`=?, `langueprincipale`=?, `doi_prefixe`=?, `openaire_access_level`=?, `upd`=? WHERE `id`=?;";
             $bind[] = $info['id'];
             _log("Updating ${site['name']} - ${site['oai_id']}");
 
         } else {
-            $q = "INSERT INTO `sets` (`set`, `name`, `oai_id`, `title`, `url`, `droitsauteur`, `editeur`, `titresite`, `issn`, `issn_electronique`, `langueprincipale`, `doi_prefixe`, `openaire_access_level`, `upd`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+            $q = "INSERT INTO `sets` (`set`, `name`, `oai_id`, `title`, `description`, `subject`, `url`, `droitsauteur`, `editeur`, `titresite`, `issn`, `issn_electronique`, `langueprincipale`, `doi_prefixe`, `openaire_access_level`, `upd`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
             _log("Inserting ${site['name']} - ${site['oai_id']}");
         }
 
