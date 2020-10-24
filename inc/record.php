@@ -70,7 +70,7 @@ function get_record($set, $class, $id) {
     #
     # IDENTIFIER
     #
-    $record['identifier_url'] = $set['url'] . $id;
+    $record['identifier_url'] = $set['url'] . '/' . $id;
     $record['identifier_doi'] = 'urn:doi:' . $set['doi_prefixe'] . $id;
 
     #
