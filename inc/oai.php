@@ -40,9 +40,9 @@ function listSets($count, $maxItems, $cursor=0) {
             if (!empty($set['url']))
                 $this_set['setDescription']['fields']['dc:identifier'][] = 'uri:' . $set['url'];
             if (!empty($set['issn']))
-                $this_set['setDescription']['fields']['dc:identifier'][] = 'urn:' . $set['issn'];
+                $this_set['setDescription']['fields']['dc:identifier'][] = 'urn:issn:' . $set['issn'];
             if (!empty($set['issn_electronique']))
-               $this_set['setDescription']['fields']['dc:identifier'][] = 'urn:' . $set['issn_electronique'];
+               $this_set['setDescription']['fields']['dc:identifier'][] = 'urn:eissn:' . $set['issn_electronique'];
             if (!empty($set['subject'])) {
                 foreach (explode(',', $set['subject']) as $subject) {
                     $this_set['setDescription']['fields']['dc:subject'][] = trim($subject);
