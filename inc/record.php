@@ -106,7 +106,7 @@ function get_record($set, $class, $id) {
     $subjects = get_index($id, 'motscles%');
     foreach ($subjects as $subject) {
         $lang = str_replace('motscles','',$subject['type']);
-        $record['subjects'][] = [$subject['g_name'], $lang];
+        $record['subject'][] = [$subject['g_name'], $lang];
     }
 
 
@@ -269,7 +269,7 @@ function format_oai_dc($record) {
     }
 
     $convert_lang = [
-        ['subjects', 'dc:subjects'],
+        ['subject', 'dc:subject'],
         ['abstract', 'dc:description'],
         ['description', 'dc:description'],
     ];
@@ -328,7 +328,7 @@ function format_oai_qdc($record) {
 
     $convert_lang = [
         ['alternative', 'dcterms:alternative'],
-        ['subjects', 'dcterms:subjects'],
+        ['subject', 'dcterms:subject'],
         ['abstract', 'dcterms:abstract'],
         ['description', 'dcterms:description'],
     ];
