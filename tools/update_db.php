@@ -42,7 +42,7 @@ function update_sets() {
             _log("Updating ${site['name']} - ${site['oai_id']}");
 
         } else {
-            $q = "INSERT INTO `sets` (`set`, `name`, `oai_id`, `title`, `description`, `subject`, `url`, `droitsauteur`, `editeur`, `titresite`, `issn`, `issn_electronique`, `langueprincipale`, `doi_prefixe`, `openaire_access_level`, `upd`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+            $q = "INSERT INTO `sets` (`set`, `name`, `oai_id`, `title`, `description`, `subject`, `url`, `droitsauteur`, `editeur`, `titresite`, `issn`, `issn_electronique`, `langueprincipale`, `doi_prefixe`, `openaire_access_level`, `upd`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
             _log("Inserting ${site['name']} - ${site['oai_id']}");
         }
 
