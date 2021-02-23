@@ -1,6 +1,6 @@
 <?php
 
-require_once('oai-pmh/oai2server.php');
+require_once('oai_pmh/oai2server.php');
 require_once('config.php');
 require_once('inc/config.php');
 require_once('inc/sql.php');
