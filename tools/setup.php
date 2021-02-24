@@ -3,6 +3,8 @@
 #
 # CLI script to create tables for lodel oai-php database
 #
+# This serves as definition of our database
+#
 # Database must exists
 # Warning: running it twice will reset your database
 #

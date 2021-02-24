@@ -1,19 +1,22 @@
 <?php
 
-# Role:
-#   Get a full record
-# Input:
-#   $set: complete set of the site
-#   $class: class of the record
-#   $id: id entity of the record
-# MUST be connected to $set['name']
-# TODO: ideally should not query DB
+/*
+Get a full record from a lodel entity
+MUST be connected to $set['name']
+TODO: ideally should not query DB
+Input:
+    $set (array): all information of the set of the site for this record (from `sets` table)
+    $class (string): class of the record
+    $id (int): id entity of the record
+Output:
+    Associative array with all information of a record
+*/
 function get_record($set, $class, $id) {
-    # Get lodel record for this entity
+    // Get lodel entity for this record
     $rec = sql_getone(lq("SELECT c.*, t.type FROM #_TP_$class c, #_TP_entities e, #_TP_types t WHERE e.idtype = t.id AND c.identity = e.id AND identity=?;"), [$id]);
     if (!$rec) return false;
 
-    # Our big array with all info about the record
+    // Our big array with all info about the record
     $record = array();
 
     #
@@ -30,7 +33,7 @@ function get_record($set, $class, $id) {
     if ($class == 'textes') {
         $record['creator'] = get_persons($id, 'auteur');
     }
-    # Pour les types publication, il faut les personnes de tous les enfants
+    // For publication type, we need all persons associated to all children
     if ($class == 'publications') {
         $record['creator'] = get_persons($id, 'auteur');
         $children = get_children($id);
@@ -114,11 +117,12 @@ function get_record($set, $class, $id) {
     # DESCRIPTION / ABSTRACT
     #
 
-    # For textes use resume, split by lang
-    # Else use texte cut at 500 + … and lang of document or site
+    // For textes use resume, split by lang
+    // Else use texte cut at 500 + … and lang of document or site
     if ($class == 'textes') {
         if (!empty($rec['resume'])) {
-            # regexp from lodel/scripts/loops.php:533:function loop_mltext
+            // Split resume by lang
+            // regexp from lodel/scripts/loops.php:533:function loop_mltext
             preg_match_all("/(?:&amp;lt;|&lt;|<)r2r:ml lang\s*=(?:&amp;quot;|&quot;|\")(\w+)(?:&amp;quot;|&quot;|\")(?:&amp;gt;|&gt;|>)(.*?)(?:&amp;lt;|&lt;|<)\/r2r:ml(?:&amp;    546 gt;|&gt;|>)/s", $rec['resume'], $mltexts, PREG_SET_ORDER);
             foreach ($mltexts as $text) {
                 $description = removenotes($text[2]);
@@ -128,7 +132,7 @@ function get_record($set, $class, $id) {
                 $record['abstract'][] = [$description, $text[1]];
             }
         } elseif (!empty($rec['texte'])) {
-            # Name it description so formater can know it's not abstract (qdc)
+            // Name this 'description' so formater can know it's not abstract (qdc)
             $texte = removenotes($rec['texte']);
             $texte = strip_tags($texte);
             $texte = html_entity_decode($texte);
@@ -137,16 +141,16 @@ function get_record($set, $class, $id) {
             $record['description'][] = [$texte, $record['language']];
         }
 
-    # For publications use introduction split by lang
+    // For publications use introduction split by lang
     } elseif ($class == 'publications' && !empty($rec['introduction'])) {
         preg_match_all("/(?:&amp;lt;|&lt;|<)r2r:ml lang\s*=(?:&amp;quot;|&quot;|\")(\w+)(?:&amp;quot;|&quot;|\")(?:&amp;gt;|&gt;|>)(.*?)(?:&amp;lt;|&lt;|<)\/r2r:ml(?:&amp;    546 gt;|&gt;|>)/s", $rec['introduction'], $mltexts, PREG_SET_ORDER);
-            foreach ($mltexts as $text) {
-                $description = removenotes($text[2]);
-                $description = strip_tags($description);
-                $description = html_entity_decode($description);
-                $description = htmlspecialchars($description);
-                $record['abstract'][] = [$description, $text[1]];
-            }
+        foreach ($mltexts as $text) {
+            $description = removenotes($text[2]);
+            $description = strip_tags($description);
+            $description = html_entity_decode($description);
+            $description = htmlspecialchars($description);
+            $record['abstract'][] = [$description, $text[1]];
+        }
     }
 
     #
@@ -177,15 +181,36 @@ function get_record($set, $class, $id) {
     #
     if ($class == 'publications' && !empty($rec['numerometas'])) {
         $record['bibliographicCitation.issue'] = $rec['numerometas'];
-        # TODO bibliographicCitation.volume qdc ?
+        // TODO bibliographicCitation.volume qdc ?
     }
 
 //     _log_debug($record);
     return $record;
 }
 
-# Create an OAI record
-# TODO: ideally should not query DB
+/*
+Create a record formatted to fit OAI-PMH library function input
+Input:
+    $record_info (array): "all" information of the record (from `records` table)
+    $metadataPrefix (string): how to format the record: oai_dc, qdc or mets
+    $full (bool): export all information or only basics
+        True for verb getRecord and ListRecords, False for ListIdentifiers)
+Output: Associative array
+[
+    identifier => oai:$oai_id/$id,
+    datestamp => '2017-01-17 10:30:02',
+    set => [name, name],
+    metadata => [
+        container_name => name,
+        container_attributes => [name => value, ],
+        fields => [
+            tagname => [value, value], OR
+            tagname => [[value,[attr_name=>value]], [value,[attr_name=>value]]],
+            …
+        ],
+    ]
+]
+*/
 function create_record($record_info, $metadataPrefix, $full) {
     $record = [
         'identifier' => oai_identifier($record_info['oai_id'], $record_info['identity']),
@@ -195,20 +220,21 @@ function create_record($record_info, $metadataPrefix, $full) {
             $record_info['set'] . ':' . $record_info['oai_id']
         ],
     ];
-    # add openaire set
+    // add openaire set if relevant
     if ($record_info['openaire'] == 'openAccess') {
         $record['set'][] = 'openaire';
     }
 
+    // return only basic information if asked to
     if (!$full) return $record;
 
-    # Only search for all informations if ListRecords
+    // Search for all informations about the record (ListRecords and getRecord verbs)
     connect_site('oai-pmh');
     $set = get_set($record_info['site']);
-
     connect_site($record_info['site']);
     $record_raw = get_record($set, $record_info['class'], $record_info['identity']);
 
+    // Format according to metadataPrefix
     if ($metadataPrefix == 'oai_dc') {
         $record_formated = format_oai_dc($record_raw);
         $container_name = 'oai_dc:dc';
@@ -238,6 +264,13 @@ function create_record($record_info, $metadataPrefix, $full) {
     return $record;
 }
 
+/*
+Format a record to oai_dc
+Input:
+    $record (array): from get_record() function
+Output:
+    $record (array): with tagName and attributes added
+*/
 function format_oai_dc($record) {
     # [ [from, to, prefix ]
     $convert = [
@@ -268,6 +301,7 @@ function format_oai_dc($record) {
         }
     }
 
+    // add lang attributes for those fields
     $convert_lang = [
         ['subject', 'dc:subject'],
         ['abstract', 'dc:description'],
@@ -285,10 +319,15 @@ function format_oai_dc($record) {
     return $oai;
 }
 
+/*
+Format a record to oai_qdc
+Input:
+    $record (array): from get_record() function
+Output:
+    $record (array): with tagName and attributes added
+*/
 function format_oai_qdc($record) {
-    # TODO some value in record must be prefixed
-
-    # [ [from, to, [attrs], prefix ]
+    // [ [from, to, [attrs], prefix ]
     $convert = [
         ['title', 'dcterms:title', False, ''],
         ['identifier_url', 'dcterms:identifier', ['scheme'=>'URI'], ''],
@@ -324,8 +363,9 @@ function format_oai_qdc($record) {
         }
     }
 
-//     $oai['dcterms:hasFormat              '] = $record['?'];
+    // TODO ? $oai['dcterms:hasFormat'] = $record['?'];
 
+    // add lang attributes for those fields
     $convert_lang = [
         ['alternative', 'dcterms:alternative'],
         ['subject', 'dcterms:subject'],

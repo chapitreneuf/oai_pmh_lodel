@@ -1,11 +1,35 @@
 <?php
 
-#
-# Functions that answer to verbs of oai-pmh protocol
-#
+/*
+    Functions that answer to verbs of oai-pmh protocol
+*/
 
-# TODO: need $count, $deliveredRecords, $maxItems
+/*
+Returns a list of set
+TODO: need $count, $deliveredRecords, $maxItems
+Input:
+    $count (bool): only return total count of sets
+    $maxItems (int): number of set to return
+    $cursor (int): offset
+Output:
+[
+    [
+        setSpec => journals:$oai_id,
+        setName => name,
+        setDescription => (optional) [
+            container_name => name,
+            container_attributes => [name => value, ],
+            fields => [
+                tagname => [value, value], OR
+                tagname => [[value,[attr_name=>value]], [value,[attr_name=>value]]],
+            ],
+        ],
+    ],
+    [another set], …
+]
+*/
 function listSets($count, $maxItems, $cursor=0) {
+    // artificially add our two top level sets
     if ($cursor == 0) {
         $maxItems -= 2;
         $sets = array(
@@ -17,6 +41,7 @@ function listSets($count, $maxItems, $cursor=0) {
     }
     connect_site('oai-pmh');
 
+    // If asked only returns count of sets
     if ($count) {
         $les_sets = get_sets();
         return count($les_sets)+1;
@@ -54,15 +79,51 @@ function listSets($count, $maxItems, $cursor=0) {
     return $sets;
 }
 
+/*
+Returns a record formatted by $metadataPrefix
+Input:
+    $identifier (string): oai:$oai_id/$id
+    $metadataPrefix (string): output format of record (oai_dc, qdc or mets)
+Output:
+[
+    identifier => oai:$oai_id/$id,
+    datestamp => '2017-01-17 10:30:02',
+    set => [name, name],
+    metadata => [
+        container_name => name,
+        container_attributes => [name => value, ],
+        fields => [
+            tagname => [value, value], OR
+            tagname => [[value,[attr_name=>value]], [value,[attr_name=>value]]],
+            …
+        ],
+    ]
+]
+*/
 function GetRecord($identifier, $metadataPrefix) {
-    $record_info = get_record_from_identifier($identifier);
+    $record_info = get_record_from_identifier($identifier); // from utils
     if (!$record_info) return false;
 
-    # METS metadataPrefix: force class=publications AND type=numero
+    // if METS metadataPrefix refuse if not class=publications AND type=numero
 
-    return create_record($record_info, $metadataPrefix, True);
+    // use True because we want to get the full record
+    return create_record($record_info, $metadataPrefix, True); // from record
 }
 
+/*
+Returns a list of records formatted by $metadataPrefix
+Input:
+    $metadataPrefix (string): output format of records (oai_dc, qdc or mets)
+    $from (date string): from when (can be empty)
+    $until (date string): until when (can be empty)
+    $set (string): name of the set (can be empty)
+    $count (int): number of record to return
+    $list_records (bool): return full information about the record (False for ListIdentifiers verb)
+    $deliveredRecords (int): offset of the list
+    $maxItems (int): number of records to return
+Output:
+    $records: array of records (like output of GetRecord())
+*/
 function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records, $deliveredRecords, $maxItems) {
     if (!empty($from)) {
         $wheres[] = '`date` >= ?';
@@ -93,7 +154,7 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records
     }
     $where = implode(' AND ', $wheres);
 
-    # METS metadataPrefix: force class=publications AND type=numero
+    // If METS metadataPrefix, MUST force class=publications AND type=numero
 
     connect_site('oai-pmh');
     if ($count) {
@@ -105,7 +166,7 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records
     $bind[] = intval($maxItems);
 
     $record_list = sql_get('SELECT `site`, `class`, `identity`, `date`, `set`, `oai_id`, `openaire` FROM records WHERE '.$where.' ORDER BY id LIMIT ?,?;', $bind);
-//     _log_debug($record_list);
+    // _log_debug($record_list);
 
     foreach ($record_list as $record_info) {
         $record = create_record($record_info, $metadataPrefix, $list_records);
@@ -115,6 +176,13 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records
     return $records;
 }
 
+/*
+List all formats this OAI server can serve
+Input:
+    $identifier (string): oai identifier
+Output:
+    $formats: associative array (read the function)
+*/
 function ListMetadataFormats($identifier) {
     $formats = [
         'qdc' => [
@@ -128,18 +196,21 @@ function ListMetadataFormats($identifier) {
             'metadataNamespace'=>'http://www.openarchives.org/OAI/2.0/oai_dc/',
             'record_prefix'=>'dc',
             'record_namespace' => 'http://purl.org/dc/elements/1.1/',
-        ]
+        ],
+        // [
+        //     'metadataPrefix'=>'mets',
+        //     'schema'=>'http://www.loc.gov/standards/mets/mets.xsd',
+        //     'metadataNamespace'=>'http://www.loc.gov/METS/',
+        // ],
     ];
-    if (!empty($identifier)) {
-        $record = get_record_from_identifier($identifier);
-        # TODO add mets for publication - numero when implemented
-    //                 if ($record['class'] == 'publications' && $record['type'] == 'numero') {
-    //                     $formats['mets'] = [
-    //                         'metadataPrefix'=>'mets',
-    //                         'schema'=>'http://www.loc.gov/standards/mets/mets.xsd',
-    //                         'metadataNamespace'=>'http://www.loc.gov/METS/',
-    //                     ]
-    //                 }
-    }
+
+    // If we have an identifier test if it can be exported as mets
+    // if (!empty($identifier)) {
+    //     $record = get_record_from_identifier($identifier);
+    //     if (!($record['class'] == 'publications' && $record['type'] == 'numero')) {
+    //         delete($formats['mets']);
+    //     }
+    // }
+
     return $formats;
 }

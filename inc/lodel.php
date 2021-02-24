@@ -3,8 +3,10 @@
 global $database_prefix;
 global $current_site;
 
-# Connexion à lodel
-function lodel_connect () {
+/*
+Connect to lodel config and functions
+*/
+function lodel_connect() {
     global $database_prefix;
     define('backoffice-lodeladmin', true);
     require_once '../lodelconfig.php';
@@ -31,12 +33,13 @@ function lodel_connect () {
     $database_prefix = c::Get('database','cfg');
 };
 
-# Role:
-#   Connexion à la base d'un site lodel
-# Input:
-#   $site: nom du site, ne rien mettre pour le site lodeladmin
-# Output:
-#   none
+/*
+Connect to a lodel site database
+Input:
+    $site (string): short name of the lodel site, empty to connect to lodeladmin
+Output:
+    none
+*/
 function connect_site($site='') {
     global $database_prefix;
     global $current_site;
@@ -48,13 +51,20 @@ function connect_site($site='') {
     $GLOBALS['currentdb'] = $db_name;
 //     _log("Connexion à $db_name", false);
 
-    # Do it ourself, lodel usecurrentdb() always return true…
-    # We want to return false if error
+    // Do it ourself, lodel usecurrentdb() always return true…
+    // We want to return false if error
     return $GLOBALS['db']->SelectDB($db_name);
 }
 
-# Role:
-#   Liste des sites lodel de cette instance qui ont OAI d'activé
+/*
+List all lodel site which have OAI activated
+Input:
+    $status (int): minimum status of the site
+Output:
+    Array of associative arrays with those keys
+    name, title, url, oai_id, upd, description, subject, droitsauteur, editeur, titresite, issn
+    issn_electronique, langueprincipale, doi_prefixe, openaire_access_level
+*/
 function get_sites($status=0) {
     global $current_site;
 
@@ -87,18 +97,31 @@ function get_sites($status=0) {
     return $sites;
 }
 
-# Role:
-#   Recevoir la valeur d'une option
+/*
+Retrieve value of a lodel site option
+Input:
+    $group (string): group name of the option
+    $name (string): name of option
+Output:
+    $value (string): value of the option, '' if empty or non existing
+*/
 function get_option($group, $name) {
     $q = lq("SELECT value FROM #_TP_options o, #_TP_optiongroups og WHERE o.idgroup = og.`id` AND og.`name` = ? AND  o.`name`=?");
     $value = sql_getone($q, [$group, $name], 'value');
     return $value ? $value : '';
 }
 
-
-# Role:
-#   Recevoir la liste de entités d'une class
-#   Donne les informations essentielles
+/*
+Get list of entities of a class
+TODO: not used
+Input:
+    $class (string): class name
+    $type (string): type name (optional)
+    $site (string): short name of lodel site (optional)
+Output:
+    Array of associative arrays with those keys
+    identity, titre, datemisenligne, langue, status
+*/
 function get_entity_info($class, $type='', $site='') {
     if ($site) {
         connect_site($site);
@@ -106,13 +129,24 @@ function get_entity_info($class, $type='', $site='') {
     return sql_get(lq("SELECT identity, titre, datemisenligne, langue, status FROM `#_TP_$class` c, `#_TP_entities` e WHERE c.identity = e.id AND status>0"));
 }
 
-# Role:
-#   Get a list of entities from class and type
-#   With information to fill `records` table
+/*
+Get list of entities of a class and type
+MUST be connected to a site
+Input:
+    $class (string): class name
+    $type (string): type name (optional)
+    $limit (int): limit !
+    $offset (int): offset !!
+    $order (string): order by clause
+Output:
+    Array of associative arrays with those keys
+    identity, titre, datemisenligne, dateacceslibre, modificationdate
+*/
 function get_entities($class, $type, $limit=10, $offset=0, $order='identity') {
     $q = lq("SELECT `identity`, `titre`, `datemisenligne`, `dateacceslibre`, `modificationdate` FROM #_TP_$class c, #_TP_entities e, #_TP_types t WHERE c.identity = e.id AND e.idtype = t.id AND t.type = '$type' AND e.status>0 ORDER BY `$order`");
     if ($limit) $q .=  " LIMIT $offset,$limit";
     $records = sql_get($q.';');
+    // TODO: format title: delete notes and tags
 
     return $records;
 }

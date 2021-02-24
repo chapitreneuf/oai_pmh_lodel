@@ -1,7 +1,7 @@
 <?php
 global $config;
 
-# Default configuration
+// Default configuration
 $base_config = array(
     'listSize' => 10,
     'setsName' => 'journals',
@@ -17,16 +17,16 @@ $base_config = array(
 //     'metadatas' => '',
 );
 
-# Merge install configuration with default one
+// Merge install configuration with default one
 $config = array_merge($base_config, $config);
 
-# Get a config
+// Get a config
 function get_conf($name) {
     global $config;
     return $config[$name];
 }
 
-# Config for the oai server
+// Config for the oai server
 function identifyResponse() {
     global $config;
     return array(

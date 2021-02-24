@@ -1,7 +1,13 @@
 <?php
 
-# Role:
-#   Query and return a statement
+/*
+Execute an SQL query and returns a statement
+Input:
+    $q (string): SQL query
+    $params (array): bind variables
+Ouput:
+    $stmt: adodb statement object
+*/
 function sql_query($q, $params=false) {
     global $db;
 
@@ -20,18 +26,32 @@ function sql_query($q, $params=false) {
     return $stmt;
 }
 
-# Role:
-#   Query and return array of results
+/*
+Execute an SQL query and returns array of result
+Input:
+    $q (string): SQL query
+    $params (array): bind variables
+Ouput:
+    $array: associative array of results
+*/
 function sql_get($q, $params=false) {
     $stmt = sql_query($q, $params);
     if (!$stmt) return false;
-    # TODO use a loop and fetchRow
-    # if $column is given, indexed by column
+    // TODO: could use a loop and fetchRow
+    // if $column is given, indexed by column
     return $stmt->GetAll();
 }
 
-# Role:
-#   Query and return first row, or value of first row if given
+/*
+Execute an SQL query and returns first row or value of one field
+Input:
+    $q (string): SQL query
+    $params (array): bind variables
+    $value (string): column name of the field we want
+Ouput:
+    $value: array of row or value of the $value field
+    false on error
+*/
 function sql_getone($q, $params=false, $value=false) {
     $rows = sql_get($q, $params);
     if ($rows) {
