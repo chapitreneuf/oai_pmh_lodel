@@ -1,10 +1,12 @@
 # OAI-PHP server for lodel CMS
 
 This is a server that respond to [OAI-PMH](http://www.openarchives.org/OAI/2.0/openarchivesprotocol.htm) protocol specification made to work with [lodel CMS](http://lodel.org/).
-It uses a core OAI-PMH librairie and this middleware to fetch data from lodel database.
+It uses a core OAI-PMH library and this middleware to fetch data from lodel database.
 
 ## INSTALL
 Clone OAI-PHP server to a directory listed in your php import path. Use the lodel branch.
+
+You **must** use lodel branch from oai_pmh library and master branch from oai_pmh_lodel or use the same tagged version from both repositories for them to be compatible.
 ```
 cd /usr/share/php/
 git clone https://github.com/edinum/oai_pmh.git
