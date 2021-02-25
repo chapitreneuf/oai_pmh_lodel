@@ -90,11 +90,11 @@ Output:
     datestamp => '2017-01-17 10:30:02',
     set => [name, name],
     metadata => [
-        container_name => name,
-        container_attributes => [name => value, ],
-        fields => [
-            tagname => [value, value], OR
-            tagname => [[value,[attr_name=>value]], [value,[attr_name=>value]]],
+        node_name,
+        node_value,
+        [attr_name => attr_value, … ],
+        [
+            [ child_node_name, child_node_value, [attrs… ], [children, …] ],
             …
         ],
     ]

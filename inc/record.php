@@ -9,7 +9,12 @@ Input:
     $class (string): class of the record
     $id (int): id entity of the record
 Output:
-    Associative array with all information of a record
+    Array of array
+    [
+        [name, value, optional lang value],
+        [name, value, optional lang value]
+        , …
+    ]
 */
 function get_record($set, $class, $id) {
     // Get lodel entity for this record
@@ -25,74 +30,84 @@ function get_record($set, $class, $id) {
     $title = $rec['titre'];
     $title = removenotes($title);
     $title = strip_tags($title);
-    $record['title'] = $title;
+    $record[] = ['title', $title];
 
     #
     # CREATOR
     #
     if ($class == 'textes') {
-        $record['creator'] = get_persons($id, 'auteur');
+        foreach (get_persons($id, 'auteur') as $creator) {
+            $record[] = ['creator', $creator];
+        }
     }
     // For publication type, we need all persons associated to all children
     if ($class == 'publications') {
-        $record['creator'] = get_persons($id, 'auteur');
+        $creators = get_persons($id, 'auteur');
         $children = get_children($id);
         foreach ($children as $child) {
-            $record['creator'] = array_merge(get_persons($child, 'auteur'), $record['creator']);
+            $creators = array_merge(get_persons($child, 'auteur'), $creators);
         }
-        $record['creator'] = array_unique($record['creator'], SORT_STRING);
+        $creators = array_unique($creators, SORT_STRING);
+        foreach ($creators as $creator) {
+            $record[] = ['creator', $creator];
+        }
     }
 
     #
     # CONTRIBUTOR
     #
     if ($class == 'publications') {
-        $record['contributor'] = get_persons($id, 'directeurdelapublication');
+        foreach (get_persons($id, 'directeurdelapublication') as $contributor) {
+            $record[] = ['contributor', $contributor];
+        }
     }
 
     #
     # RIGHTS
     #
-    $record['rights'] = $set['droitsauteur'];
-    $record['accessrights'] = 'info:eu-repo/semantics/'.$set['openaire_access_level'];
+    $record[] = ['rights', $set['droitsauteur']];
+    $record[] = ['accessrights', 'info:eu-repo/semantics/'.$set['openaire_access_level']];
 
     #
     # DATE
     #
-    $record['issued'] = $rec['datepubli'];
+    $record[] = ['issued', $rec['datepubli']];
     if ($set['openaire_access_level'] == 'embargoedAccess') {
-        $record['embargoed'] = $rec['datepubli'];
+        $record[] = ['embargoed', $rec['datepubli']];
     }
 
     #
     # PUBLISHER
     #
-    $record['publisher'][] = $set['editeur'];
-    $record['publisher'][] = $set['titresite'];
+    $record[] = ['publisher', $set['editeur']];
+    $record[] = ['publisher', $set['titresite']];
 
     #
     # IDENTIFIER
     #
-    $record['identifier_url'] = $set['url'] . '/' . $id;
-    $record['identifier_doi'] = 'urn:doi:' . $set['doi_prefixe'] . $id;
+    $record[] = ['identifier_url', $set['url'] . '/' . $id];
+    $record[] = ['identifier_doi', 'urn:doi:' . $set['doi_prefixe'] . $id];
 
     #
     # LANGUAGE
     #
-    $record['language'] = !empty($rec['langue']) ? $rec['langue'] : $set['langueprincipale'];
+    $record[] = [
+        'language',
+        !empty($rec['langue']) ? $rec['langue'] : $set['langueprincipale']
+    ];
 
     #
     # TYPE
     #
-    $record['type'][] = convert_type($class, $rec['type'], 'oai');
-    $record['type'][] = 'info:eu-repo/semantics/' . convert_type($class, $rec['type'], 'openaire'); # TODO not for qdc ?
+    $record[] = ['type', convert_type($class, $rec['type'], 'oai')];
+    $record[] = ['type', 'info:eu-repo/semantics/' . convert_type($class, $rec['type'], 'openaire')]; # TODO not for qdc ?
 
     #
     # COVERAGE
     #
     $coverages = get_index($id, 'geographie');
     foreach ($coverages as $coverage) {
-        $record['coverage'][] = $coverage['g_name'];
+        $record[] = ['coverage', $coverage['g_name']];
     }
 
     #
@@ -100,7 +115,7 @@ function get_record($set, $class, $id) {
     #
     $temporals = get_index($id, 'chrono');
     foreach ($temporals as $temporal) {
-        $record['temporal'][] = $temporal['g_name'];
+        $record[] = ['temporal', $temporal['g_name']];
     }
 
     #
@@ -109,7 +124,7 @@ function get_record($set, $class, $id) {
     $subjects = get_index($id, 'motscles%');
     foreach ($subjects as $subject) {
         $lang = str_replace('motscles','',$subject['type']);
-        $record['subject'][] = [$subject['g_name'], $lang];
+        $record[] = ['subject', $subject['g_name'], $lang];
     }
 
 
@@ -129,7 +144,7 @@ function get_record($set, $class, $id) {
                 $description = strip_tags($description);
                 $description = html_entity_decode($description);
                 $description = htmlspecialchars($description);
-                $record['abstract'][] = [$description, $text[1]];
+                $record[] = ['abstract', $description, $text[1]];
             }
         } elseif (!empty($rec['texte'])) {
             // Name this 'description' so formater can know it's not abstract (qdc)
@@ -138,7 +153,7 @@ function get_record($set, $class, $id) {
             $texte = html_entity_decode($texte);
             $texte = cuttext($texte, 500) . ' …';
             $texte = htmlspecialchars($texte);
-            $record['description'][] = [$texte, $record['language']];
+            $record[] = ['description', $texte, $record['language']];
         }
 
     // For publications use introduction split by lang
@@ -149,15 +164,15 @@ function get_record($set, $class, $id) {
             $description = strip_tags($description);
             $description = html_entity_decode($description);
             $description = htmlspecialchars($description);
-            $record['abstract'][] = [$description, $text[1]];
+            $record[] = ['abstract', $description, $text[1]];
         }
     }
 
     #
     # RELATION
     #
-    if (!empty($set['issn'])) $record['issn'] = $set['issn'];
-    if (!empty($set['issn_electronique'])) $record['eissn'] = $set['issn_electronique'];
+    if (!empty($set['issn'])) $record[] = ['issn', $set['issn']];
+    if (!empty($set['issn_electronique'])) $record[] = ['eissn', $set['issn_electronique']];
 
     #
     # ALTERNATIVE
@@ -166,21 +181,21 @@ function get_record($set, $class, $id) {
     foreach ($mltexts as $text) {
         $altertitre = removenotes($text[2]);
         $altertitre = strip_tags($altertitre);
-        $record['alternative'][] = [$altertitre, $text[1]];
+        $record[] = ['alternative', $altertitre, $text[1]];
     }
 
     #
     # EXTEND
     #
     if ($class == 'textes' && !empty($rec['pagination'])) {
-        $record['extend'] = $rec['pagination'];
+        $record[] = ['extend', $rec['pagination']];
     }
 
     #
     # bibliographicalCitation
     #
     if ($class == 'publications' && !empty($rec['numerometas'])) {
-        $record['bibliographicCitation.issue'] = $rec['numerometas'];
+        $record[] = ['bibliographicCitation.issue', $rec['numerometas']];
         // TODO bibliographicCitation.volume qdc ?
     }
 
@@ -201,11 +216,11 @@ Output: Associative array
     datestamp => '2017-01-17 10:30:02',
     set => [name, name],
     metadata => [
-        container_name => name,
-        container_attributes => [name => value, ],
-        fields => [
-            tagname => [value, value], OR
-            tagname => [[value,[attr_name=>value]], [value,[attr_name=>value]]],
+        format_tag_name,
+        '',
+        [format_attr_name => attr_value, … ],
+        [
+            [ child_node_name, child_node_value, [attrs… ], [children, …] ],
             …
         ],
     ]
@@ -232,11 +247,11 @@ function create_record($record_info, $metadataPrefix, $full) {
     connect_site('oai-pmh');
     $set = get_set($record_info['site']);
     connect_site($record_info['site']);
-    $record_raw = get_record($set, $record_info['class'], $record_info['identity']);
+    $children = get_record($set, $record_info['class'], $record_info['identity']);
 
     // Format according to metadataPrefix
     if ($metadataPrefix == 'oai_dc') {
-        $record_formated = format_oai_dc($record_raw);
+        format_oai_dc($children);
         $container_name = 'oai_dc:dc';
         $container_attributes = [
             'xmlns:oai_dc' => "http://www.openarchives.org/OAI/2.0/oai_dc/",
@@ -245,7 +260,7 @@ function create_record($record_info, $metadataPrefix, $full) {
             'xsi:schemaLocation' => 'http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd'
         ];
     } else if ($metadataPrefix == 'qdc') {
-        $record_formated = format_oai_qdc($record_raw);
+        format_oai_qdc($children);
         $container_name = 'qdc:qualifieddc';
         $container_attributes = [
             'xmlns:qdc' => "http://www.bl.uk/namespaces/oai_dcq/",
@@ -256,12 +271,41 @@ function create_record($record_info, $metadataPrefix, $full) {
     }
 
     $record['metadata'] = [
-        'container_name' => $container_name,
-        'container_attributes' => $container_attributes,
-        'fields' => $record_formated
+        $container_name,
+        '',
+        $container_attributes,
+        $children
     ];
 
     return $record;
+}
+
+/*
+Format a record using a map
+Input:
+    $record (array): from get_record() function: [[name, value, lang], …]
+    $map (associative array): ['from' => [to, prefix, [attr_name=>attr_value,…]], …]
+Output:
+    none: $record changed in place with names converted, values prefixed and attributes added
+*/
+function format_record(&$record, &$map) {
+    foreach ($record as &$field) {
+        if (!empty($map[$field[0]])) {
+            @list($to, $prefix, $attrs) = $map[$field[0]];
+
+            // rename name
+            $field[0] = $to;
+            // add prefix to value
+            if ($prefix) $field[1] = $prefix . $field[1];
+            // Set attributes if any
+            // If attribute is defined in field, it is a lang attribute
+            if (!empty($field[2])) {
+                $field[2] = ['xml:lang' => $field[2]];
+            } elseif ($attrs) {
+                $field[2] = $attrs;
+            }
+        }
+    }
 }
 
 /*
@@ -269,54 +313,32 @@ Format a record to oai_dc
 Input:
     $record (array): from get_record() function
 Output:
-    $record (array): with tagName and attributes added
+    none: $record is formatted in place
 */
-function format_oai_dc($record) {
-    # [ [from, to, prefix ]
-    $convert = [
-        ['title', 'dc:title', ''],
-        ['identifier_url', 'dc:identifier', ''],
-        ['identifier_doi', 'dc:identifier', ''],
-        ['creator', 'dc:creator', ''],
-        ['contributor', 'dc:contibutor', ''],
-        ['rights', 'dc:rights', ''],
-        ['accessrights', 'dc:rights', ''],
-        ['issued', 'dc:date', ''],
-        ['embargoed', 'dc:date', 'info:eu-repo/date/embargoEnd/'],
-        ['publisher', 'dc:publisher', ''],
-        ['language', 'dc:language', ''],
-        ['type', 'dc:type', ''],
-        ['coverage', 'dc:coverage', ''],
-        ['issn', 'dc:relation', 'info:eu-repo/semantics/reference/issn/'],
-        ['eissn', 'dc:relation', 'info:eu-repo/semantics/reference/issn/'],
+function format_oai_dc(&$record) {
+    # from => [to, prefix]
+    $oai_dc_map = [
+        'title' => ['dc:title'],
+        'identifier_url' => ['dc:identifier'],
+        'identifier_doi' => ['dc:identifier'],
+        'creator' => ['dc:creator'],
+        'contributor' => ['dc:contibutor'],
+        'rights' => ['dc:rights'],
+        'accessrights' => ['dc:rights'],
+        'issued' => ['dc:date'],
+        'embargoed' => ['dc:date', 'info:eu-repo/date/embargoEnd/'],
+        'publisher' => ['dc:publisher'],
+        'language' => ['dc:language'],
+        'type' => ['dc:type'],
+        'coverage' => ['dc:coverage'],
+        'issn' => ['dc:relation', 'info:eu-repo/semantics/reference/issn/'],
+        'eissn' => ['dc:relation', 'info:eu-repo/semantics/reference/issn/'],
+        'subject' => ['dc:subject'],
+        'abstract' => ['dc:description'],
+        'description' => ['dc:description'],
     ];
-    foreach ($convert as $conv) {
-        list ($from, $to, $prefix) = $conv;
-        if (!empty($record[$from])) {
-            if (is_array($record[$from])) {
-                $oai[$to] = $record[$from];
-            } else {
-                $oai[$to][] = $prefix . $record[$from];
-            }
-        }
-    }
 
-    // add lang attributes for those fields
-    $convert_lang = [
-        ['subject', 'dc:subject'],
-        ['abstract', 'dc:description'],
-        ['description', 'dc:description'],
-    ];
-    foreach ($convert_lang as $conv) {
-        list($from, $to) = $conv;
-        if (!empty($record[$from])) {
-            foreach ($record[$from] as $fields) {
-                $oai[$to][] = [$fields[0], ['xml:lang'=>$fields[1]]];
-            }
-        }
-    }
-
-    return $oai;
+    format_record($record, $oai_dc_map);
 }
 
 /*
@@ -324,62 +346,35 @@ Format a record to oai_qdc
 Input:
     $record (array): from get_record() function
 Output:
-    $record (array): with tagName and attributes added
+    none: $record is formatted in place
 */
-function format_oai_qdc($record) {
-    // [ [from, to, [attrs], prefix ]
-    $convert = [
-        ['title', 'dcterms:title', False, ''],
-        ['identifier_url', 'dcterms:identifier', ['scheme'=>'URI'], ''],
-        ['identifier_doi', 'dcterms:identifier', ['scheme'=>'URN'], ''],
-        ['issn', 'dcterms:isPartOf', ['scheme'=>'URN'], 'urn:issn:'],
-        ['eissn', 'dcterms:isPartOf', ['scheme'=>'URN'], 'urn:eissn:'],
-        ['creator', 'dcterms:creator', False, ''],
-        ['contributor', 'dcterms:contibutor', False, ''],
-        ['accessrights', 'dcterms:accessRights', False, ''],
-        ['rights', 'dcterms:rights', False, ''],
-        ['issued', 'dcterms:issued', ['xsi:type'=>'dcterms:W3CDTF'], ''],
-        ['embargoed', 'dcterms:available', ['xsi:type'=>'dcterms:W3CDTF'], ''],
-        ['publisher', 'dcterms:publisher', False, ''],
-        ['language', 'dcterms:language', ['xsi:type'=>'dcterms:RFC1766'], ''],
-        ['type', 'dcterms:type', False, ''],
-        ['extent', 'dcterms:extent', False, ''],
-        ['spatial', 'dcterms:spatial', False, ''],
-        ['temporal', 'dcterms:temporal', False, ''],
-        ['bibliographicalCitation.issue', 'dcterms:bibliographicalCitation.issue', False, ''],
+function format_oai_qdc(&$record) {
+    // from => [to, prefix, [attrs]]
+    $oai_qdc_map = [
+        'title' => ['dcterms:title'],
+        'identifier_url' => ['dcterms:identifier', '', ['scheme'=>'URI']],
+        'identifier_doi' => ['dcterms:identifier', '', ['scheme'=>'URN']],
+        'issn' => ['dcterms:isPartOf', 'urn:issn:', ['scheme'=>'URN']],
+        'eissn' => ['dcterms:isPartOf', 'urn:eissn:', ['scheme'=>'URN']],
+        'creator' => ['dcterms:creator'],
+        'contributor' => ['dcterms:contibutor'],
+        'accessrights' => ['dcterms:accessRights'],
+        'rights' => ['dcterms:rights'],
+        'issued' => ['dcterms:issued', '', ['xsi:type'=>'dcterms:W3CDTF']],
+        'embargoed' => ['dcterms:available', '', ['xsi:type'=>'dcterms:W3CDTF']],
+        'publisher' => ['dcterms:publisher'],
+        'language' => ['dcterms:language', '', ['xsi:type'=>'dcterms:RFC1766']],
+        'type' => ['dcterms:type'],
+        'extent' => ['dcterms:extent'],
+        'spatial' => ['dcterms:spatial'],
+        'temporal' => ['dcterms:temporal'],
+        'bibliographicalCitation.issue' => ['dcterms:bibliographicalCitation.issue'],
+        'alternative' => ['dcterms:alternative'],
+        'subject' => ['dcterms:subject'],
+        'abstract' => ['dcterms:abstract'],
+        'description' => ['dcterms:description'],
     ];
-    foreach ($convert as $conv) {
-        list ($from, $to, $attrs, $prefix) = $conv;
-        if (!empty($record[$from])) {
-            if (is_array($record[$from])) {
-                $oai[$to] = $record[$from];
-            } else {
-                if ($attrs) {
-                    $oai[$to][] = [$prefix . $record[$from], $attrs];
-                } else {
-                    $oai[$to][] = $prefix . $record[$from];
-                }
-            }
-        }
-    }
-
     // TODO ? $oai['dcterms:hasFormat'] = $record['?'];
 
-    // add lang attributes for those fields
-    $convert_lang = [
-        ['alternative', 'dcterms:alternative'],
-        ['subject', 'dcterms:subject'],
-        ['abstract', 'dcterms:abstract'],
-        ['description', 'dcterms:description'],
-    ];
-    foreach ($convert_lang as $conv) {
-        list($from, $to) = $conv;
-        if (!empty($record[$from])) {
-            foreach ($record[$from] as $fields) {
-                $oai[$to][] = [$fields[0], ['xml:lang'=>$fields[1]]];
-            }
-        }
-    }
-
-    return $oai;
+    format_record($record, $oai_qdc_map);
 };
