@@ -146,7 +146,12 @@ function get_entities($class, $type, $limit=10, $offset=0, $order='identity') {
     $q = lq("SELECT `identity`, `titre`, `datemisenligne`, `dateacceslibre`, `modificationdate` FROM #_TP_$class c, #_TP_entities e, #_TP_types t WHERE c.identity = e.id AND e.idtype = t.id AND t.type = '$type' AND e.status>0 ORDER BY `$order`");
     if ($limit) $q .=  " LIMIT $offset,$limit";
     $records = sql_get($q.';');
-    // TODO: format title: delete notes and tags
+
+    // Format title: delete notes and tags
+    foreach ($records as &$rec) {
+        $rec['titre'] = removenotes($rec['titre']);
+        $rec['titre'] = strip_tags($rec['titre']);
+    }
 
     return $records;
 }
