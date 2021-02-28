@@ -91,10 +91,8 @@ function get_record($set, $class, $id) {
     #
     # LANGUAGE
     #
-    $record[] = [
-        'language',
-        !empty($rec['langue']) ? $rec['langue'] : $set['langueprincipale']
-    ];
+    $language = !empty($rec['langue']) ? $rec['langue'] : $set['langueprincipale'];
+    $record[] = ['language', $language];
 
     #
     # TYPE
@@ -153,7 +151,7 @@ function get_record($set, $class, $id) {
             $texte = html_entity_decode($texte);
             $texte = cuttext($texte, 500) . ' …';
             $texte = htmlspecialchars($texte);
-            $record[] = ['description', $texte, $record['language']];
+            $record[] = ['description', $texte, $language];
         }
 
     // For publications use introduction split by lang
