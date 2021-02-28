@@ -49,7 +49,7 @@ It uses it's own database (lodel_oai-pmh) to save Sets (lodel sites) and Records
 Update of the database is done by update_db.php script that should run in the background using crontab. It takes care of newly published sites or documents and take care of deletion (deleted status is not implemented in OAI-PMH).
 
 ## Thanks
-Thanks to [Université Jean Moulin Lyon 3](https://www.univ-lyon3.fr/) (especially Jean-Luc de Ochandiano) who paid for developing this tool.
+Thanks to [Université Jean Moulin Lyon 3](https://www.univ-lyon3.fr/) who paid for developing this tool, and special thanks to Jean-Luc de Ochandiano and [Olivier Crouzet](https://github.com/oliviercrouzet).
 
 Thanks to [Daniel Neis Araujo](https://github.com/danielneis) for his OAI-PMH librairie.
 
