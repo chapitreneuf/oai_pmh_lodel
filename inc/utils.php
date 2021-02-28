@@ -148,15 +148,15 @@ TODO: this could be a config (or at least extendable)
 function get_publication_types() {
     return [
         'publications' => [
-            'numero' => ['oai'=>'issue', 'openaire'=> 'other'],
-            'souspartie' => ['oai'=>'part', 'openaire'=> 'other'],
+            'numero' => ['oai'=>'issue', 'openaire'=> 'other', 'mets'=>'issue'],
+            'souspartie' => ['oai'=>'part', 'openaire'=> 'other', 'mets'=>'part'],
         ],
         'textes' => [
-            'article' => ['oai'=>'article', 'openaire'=> 'article'],
-            'chronique' => ['oai'=>'article', 'openaire'=> 'other'],
-            'compterendu' => ['oai'=>'review', 'openaire'=> 'review'],
-            'notedelecture' => ['oai'=>'review', 'openaire'=> 'review'],
-            'editorial' => ['oai'=>'introduction', 'openaire'=> 'article'],
+            'article' => ['oai'=>'article', 'openaire'=> 'article', 'mets'=>'article'],
+            'chronique' => ['oai'=>'article', 'openaire'=> 'other', 'mets'=>'article'],
+            'compterendu' => ['oai'=>'review', 'openaire'=> 'review', 'mets'=>'review'],
+            'notedelecture' => ['oai'=>'review', 'openaire'=> 'review', 'mets'=>'review'],
+            'editorial' => ['oai'=>'introduction', 'openaire'=> 'article', 'mets'=>'introduction'],
         ],
     ];
 }

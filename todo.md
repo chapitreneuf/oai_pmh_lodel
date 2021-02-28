@@ -192,3 +192,63 @@ done
     oai.php : oai functions
     utils.php : other functions
     record.php : record functions
+
+## Mets
+  omg j'ai pas envie de faire ce format…
+  va fallir 10 ans pour écrire et comprendre la spec :
+  - only for publications, numero
+
+- <mets:dmdSec ID=""> : list of all document of the structure
+  - attr: ID : uniq id → oai_id : elem id 
+  - <mets:mdWrap MDTYPE="DC" LABEL="Dublin Core Descriptive Metadata" MIMETYPE="text/xml">
+    - <mets:xmlData>
+      - qdc of document
+- <mets:fileSec>
+  - <mets:fileGrp ID="FG:site_oai:255"> : list of class==texte document and their format
+    - <mets:file ID="site_oai:xhtml:255" MIMETYPE="text/html">
+        <mets:FLocat LOCTYPE="URL" xlink:href="http://edinum.org/site/255"/>
+      </mets:file>
+      TODO: what other formats ?
+        - PDF (included files)
+        - TEI
+- <mets:structMap> : list of all element, nested
+  - <mets:div LABEL="titre" TYPE="mets_type" DMDID="reference to dmd id" ID="reference to nothing">
+    - <mets:fptr FILEID="reference to fileSec id"/>
+
+  types:
+  'publications' => [
+            'numero' => ['mets'=>'issue'],
+            'souspartie' => ['mets'=>'part'],
+        ],
+        'textes' => [
+            'article' => ['mets'=>'article'],
+            'chronique' => ['mets'=>'article'],
+            'compterendu' => ['mets'=>'review'],
+            'notedelecture' => ['mets'=>'review'],
+            'editorial' => ['mets'=>'introduction'],
+        ],
+
+  mets : 
+   func mets(id, map, dmd, file)
+      dmd[] = oai_id:elem_id + qdc
+      map = map[] titre + dmd_id
+      if class == texte
+        filegrp[] = FG:oai_id:elem_id
+        foreach type of file
+          filegrp[][] = oai_id:file_type:elem_id
+          map fptr
+      else
+        foreach children
+          mets(children_id, map, dmd, file)
+
+
+
+## Create xml tree
+
+(&$parent, $tree)
+ name, value, attr, children
+ if children
+    foreach children
+        recurs (me, $child)
+
+

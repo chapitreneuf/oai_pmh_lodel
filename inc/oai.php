@@ -104,8 +104,6 @@ function GetRecord($identifier, $metadataPrefix) {
     $record_info = get_record_from_identifier($identifier); // from utils
     if (!$record_info) return false;
 
-    // if METS metadataPrefix refuse if not class=publications AND type=numero
-
     // use True because we want to get the full record
     return create_record($record_info, $metadataPrefix, True); // from record
 }
@@ -152,9 +150,14 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records
         $wheres[] = '`set` = ?';
         $bind[] = 'journals';
     }
+
+    // If METS metadataPrefix, force class=publications AND type=numero
+    if ($metadataPrefix == 'mets') {
+        $wheres[] = '`class` = "publications" AND `type` = "numero"';
+    }
+
     $where = implode(' AND ', $wheres);
 
-    // If METS metadataPrefix, MUST force class=publications AND type=numero
 
     connect_site('oai-pmh');
     if ($count) {
@@ -165,9 +168,10 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records
     $bind[] = intval($deliveredRecords);
     $bind[] = intval($maxItems);
 
-    $record_list = sql_get('SELECT `site`, `class`, `identity`, `date`, `set`, `oai_id`, `openaire` FROM records WHERE '.$where.' ORDER BY id LIMIT ?,?;', $bind);
+    $record_list = sql_get('SELECT * FROM records WHERE '.$where.' ORDER BY id LIMIT ?,?;', $bind);
     // _log_debug($record_list);
 
+    $records = [];
     foreach ($record_list as $record_info) {
         $record = create_record($record_info, $metadataPrefix, $list_records);
         $records[] = $record;
@@ -197,20 +201,20 @@ function ListMetadataFormats($identifier) {
             'record_prefix'=>'dc',
             'record_namespace' => 'http://purl.org/dc/elements/1.1/',
         ],
-        // [
-        //     'metadataPrefix'=>'mets',
-        //     'schema'=>'http://www.loc.gov/standards/mets/mets.xsd',
-        //     'metadataNamespace'=>'http://www.loc.gov/METS/',
-        // ],
+        'mets' => [
+            'metadataPrefix'=>'mets',
+            'schema'=>'http://www.loc.gov/standards/mets/mets.xsd',
+            'metadataNamespace'=>'http://www.loc.gov/METS/',
+        ],
     ];
 
     // If we have an identifier test if it can be exported as mets
-    // if (!empty($identifier)) {
-    //     $record = get_record_from_identifier($identifier);
-    //     if (!($record['class'] == 'publications' && $record['type'] == 'numero')) {
-    //         delete($formats['mets']);
-    //     }
-    // }
+    if (!empty($identifier)) {
+        $record = get_record_from_identifier($identifier);
+        if (!($record['class'] == 'publications' && $record['type'] == 'numero')) {
+            unset($formats['mets']);
+        }
+    }
 
     return $formats;
 }

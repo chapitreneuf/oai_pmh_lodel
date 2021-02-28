@@ -244,28 +244,41 @@ function create_record($record_info, $metadataPrefix, $full) {
     // Search for all informations about the record (ListRecords and getRecord verbs)
     connect_site('oai-pmh');
     $set = get_set($record_info['site']);
-    connect_site($record_info['site']);
-    $children = get_record($set, $record_info['class'], $record_info['identity']);
 
-    // Format according to metadataPrefix
-    if ($metadataPrefix == 'oai_dc') {
-        format_oai_dc($children);
-        $container_name = 'oai_dc:dc';
+    if ($metadataPrefix == 'mets') {
+        $children = mets_record($set, $record_info);
+        $container_name = 'mets:mets';
         $container_attributes = [
-            'xmlns:oai_dc' => "http://www.openarchives.org/OAI/2.0/oai_dc/",
-            'xmlns:dc' => "http://purl.org/dc/elements/1.1/",
+            'xmlns:mets' => "http://www.loc.gov/METS/",
+            'xmlns:dcterms' => "http://purl.org/dc/terms/",
+            'xmlns:xlink' => "http://www.w3.org/1999/xlink",
             'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
-            'xsi:schemaLocation' => 'http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd'
+            'xsi:schemaLocation' => "http://www.loc.gov/METS/ http://www.loc.gov/standards/mets/mets.xsd http://www.w3.org/1999/xlink http://www.loc.gov/standards/mets/xlink.xsd http://purl.org/dc/terms/ https://dublincore.org/schemas/xmls/qdc/2006/01/06/dcterms.xsd",
         ];
-    } else if ($metadataPrefix == 'qdc') {
-        format_oai_qdc($children);
-        $container_name = 'qdc:qualifieddc';
-        $container_attributes = [
-            'xmlns:qdc' => "http://www.bl.uk/namespaces/oai_dcq/",
-            'xmlns:dcterms' => 'http://purl.org/dc/terms/',
-            'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
-            'xsi:schemaLocation' => 'http://www.bl.uk/namespaces/oai_dcq/ http://www.bl.uk/schemas/qualifieddc/oai_dcq.xsd',
-        ];
+    } else {
+        connect_site($record_info['site']);
+        $children = get_record($set, $record_info['class'], $record_info['identity']);
+
+        // Format according to metadataPrefix
+        if ($metadataPrefix == 'oai_dc') {
+            format_oai_dc($children);
+            $container_name = 'oai_dc:dc';
+            $container_attributes = [
+                'xmlns:oai_dc' => "http://www.openarchives.org/OAI/2.0/oai_dc/",
+                'xmlns:dc' => "http://purl.org/dc/elements/1.1/",
+                'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
+                'xsi:schemaLocation' => 'http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd'
+            ];
+        } else if ($metadataPrefix == 'qdc') {
+            format_oai_qdc($children);
+            $container_name = 'qdc:qualifieddc';
+            $container_attributes = [
+                'xmlns:qdc' => "http://www.bl.uk/namespaces/oai_dcq/",
+                'xmlns:dcterms' => 'http://purl.org/dc/terms/',
+                'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
+                'xsi:schemaLocation' => 'http://www.bl.uk/namespaces/oai_dcq/ http://www.bl.uk/schemas/qualifieddc/oai_dcq.xsd',
+            ];
+        }
     }
 
     $record['metadata'] = [
@@ -276,6 +289,152 @@ function create_record($record_info, $metadataPrefix, $full) {
     ];
 
     return $record;
+}
+
+/*
+Create a structure for mets format (recursive)
+Input:
+    $set (assoc array): row from the `sets` table
+    $record_info (assoc array): row from the `records` table
+    $mets (array): mets structure (xml tree)
+    $map (array): map structure (xml tree)
+    $files (array): array of files (xml tree)
+    $no_return (bool): control recursion
+Output:
+    $mets (assoc array): structure of mets record that can be fed to OAI-PMH library
+*/
+function mets_record($set, $record_info, &$mets=[], &$map=false, &$files=[], $no_return=0) {
+    // First call, create root of the map
+    if ($map === false) {
+        $map = ['mets:structMap', '', [], []];
+    }
+
+    # Create dmdSec for this record
+    connect_site($record_info['site']);
+    $record = get_record($set, $record_info['class'], $record_info['identity']);
+    format_oai_qdc($record);
+    $dmdid = $record_info['oai_id'] . ':' . $record_info['identity'];
+    $mets[] = ['mets:dmdSec', '', ['ID' => $dmdid],
+        [
+            [
+                'mets:mdWrap', '',
+                ['MDTYPE'=>'DC', 'LABEL'=>'Dublin Core Descriptive Metadata', 'MIMETYPE'=>'text/xml'],
+                [ ['mets:xmlData', '', [], $record] ],
+            ]
+        ]
+    ];
+
+    # Create files
+    $files_of_record = get_record_files($set, $record_info);
+    $my_file = ['mets:fileGrp', '', ['ID' => 'FG:' . $dmdid], []];
+    foreach ($files_of_record as $file) {
+        $my_file[3][] = mets_file_structure($file);
+    }
+    $files[] = &$my_file;
+
+    # Create map
+    $label = htmlspecialchars($record_info['title'], ENT_QUOTES, "UTF-8");
+    $div_attrs = [
+        'LABEL' => $label,
+        'DMDID' => $dmdid,
+        'ID' => 'M:'.$dmdid,
+        'TYPE' => convert_type($record_info['class'], $record_info['type'], 'mets'),
+    ];
+    if (isset($record_info['order'])) {
+        $div_attrs['ORDER'] = $record_info['order'];
+    }
+    $my_map = ['mets:div', '', $div_attrs, []];
+    // add files in the map
+    foreach ($files_of_record as $file) {
+        $my_map[3][] = ['mets:fptr', '', ['FILEID'=>$file['id']]];
+    }
+
+    // Look for children of this record
+    if ($record_info['class'] == 'publications') {
+        // TODO use get_publication_types() to filter class and type
+        $children = sql_get(lq('SELECT e.id FROM #_TP_entities as e, #_TP_types as t
+            WHERE e.idparent=? AND e.status > 0 AND e.idtype = t.id AND (
+            (t.class = "textes" AND t.type IN ("article", "chronique", "compterendu", "notedelecture", "editorial")) OR
+            (t.class = "publications" AND t.type IN ("numero","souspartie")))
+            order by e.rank;'), [$record_info['identity']]);
+
+        // Loop on children, pass order to it
+        $order = 1;
+        foreach ($children as $i) {
+            connect_site('oai-pmh');
+            $child_info = sql_getone("SELECT * FROM `records` WHERE `oai_id` = ? AND identity = ?;", [$record_info['oai_id'], $i['id']]);
+            $child_info['order'] = $order++;
+            mets_record($set, $child_info, $mets, $my_map, $files, 1);
+        }
+    }
+
+    // add this record as child of parent to the map
+    $map[3][] = &$my_map;
+
+    // Only return something at first call
+    if ($no_return) return 1;
+
+    array_push(
+        $mets,
+        ['mets:fileSec', '', [], $files],
+        $map
+    );
+
+    return $mets;
+}
+
+/*
+Returns an array of files associated to a record
+Input:
+    $record_info (assoc array): line from `records` table
+    $set (assoc array): line from `set` table
+Output:
+    $files (array of assoc array):
+    [
+        [type, url, mimetype, id]
+    ]
+TODO:
+    Use this for create_record
+    add user defined function to add some files
+*/
+function get_record_files($set, $record_info) {
+    $files = [];
+    $files['xhtml'] = [
+        'type' => 'xhtml',
+        'url' => $set['url'] . '/' . $record_info['identity'],
+        'mimetype' => 'text/html',
+        'id' => $record_info['oai_id'] . ':xhtml:' . $record_info['identity'],
+    ];
+    if ($record_info['class'] == 'textes') {
+        $files['pdf'] = [
+            'type' => 'pdf',
+            'url' => $set['url'] . '/PDF/' . $record_info['identity'],
+            'mimetype' => 'application/pdf',
+            'id' => $record_info['oai_id'] . ':pdf:' . $record_info['identity'],
+        ];
+        $files['tei'] = [
+            'type' => 'tei',
+            'url' => $set['url'] . '/TEI/' . $record_info['identity'],
+            'mimetype' => 'text/xml',
+            'id' => $record_info['oai_id'] . ':tei:' . $record_info['identity'],
+        ];
+    };
+
+    return $files;
+}
+
+/*
+Create a structured array describing a file for mets record
+Input:
+    $file (assoc array): with type, url, mimetype and id
+*/
+function mets_file_structure($file) {
+    return [
+        'mets:file', '', ['ID' => $file['id'], 'MIMETYPE' => $file['mimetype']],
+        [
+            ['mets:FLocat', '', ['LOCTYPE'=>'URL', 'xlink:href' => $file['url']]],
+        ],
+    ];
 }
 
 /*
