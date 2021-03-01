@@ -399,26 +399,57 @@ TODO:
 */
 function get_record_files($set, $record_info) {
     $files = [];
+    // All types have an HTML version of the record
     $files['xhtml'] = [
         'type' => 'xhtml',
         'url' => $set['url'] . '/' . $record_info['identity'],
         'mimetype' => 'text/html',
-        'id' => $record_info['oai_id'] . ':xhtml:' . $record_info['identity'],
+        'id' => $set['oai_id'] . ':xhtml:' . $record_info['identity'],
     ];
-    if ($record_info['class'] == 'textes') {
-        $files['pdf'] = [
-            'type' => 'pdf',
-            'url' => $set['url'] . '/PDF/' . $record_info['identity'],
-            'mimetype' => 'application/pdf',
-            'id' => $record_info['oai_id'] . ':pdf:' . $record_info['identity'],
-        ];
-        $files['tei'] = [
-            'type' => 'tei',
-            'url' => $set['url'] . '/TEI/' . $record_info['identity'],
-            'mimetype' => 'text/xml',
-            'id' => $record_info['oai_id'] . ':tei:' . $record_info['identity'],
-        ];
-    };
+
+    // Only if not embargoed
+    if ($set['openaire_access_level'] != 'embargoedAccess') {
+
+        // Files of class TEXTES
+        if ($record_info['class'] == 'textes') {
+            // PDF of textes is in alterfichier
+            $class = $record_info['class'];
+            $pdf = sql_getone(lq("select alterfichier from #_TP_$class where identity=?"),[$record_info['identity']], 'alterfichier');
+            if ($pdf) {
+                $files['pdf'] = [
+                    'type' => 'pdf',
+                    'url' => $set['url'] . '/' . $record_info['identity'] . '?file=1',
+                    'mimetype' => 'application/pdf',
+                    'id' => $set['oai_id'] . ':pdf:' . $record_info['identity'],
+                ];
+            }
+
+            // TEI is a child entity of type fichierannexe
+            $tei = sql_getone(lq("SELECT e.id from #_TP_entities as e, types as t WHERE e.idtype=t.id AND class='fichiers' AND type='fichierannexe' AND identifier='tei' AND idparent=?"), [$record_info['identity']], 'id');
+            if ($tei) {
+                $files['tei'] = [
+                    'type' => 'tei',
+                    'url' => $set['url'] . '/' . $tei . '?file=1',
+                    'mimetype' => 'text/xml',
+                    'id' => $set['oai_id'] . ':tei:' . $record_info['identity'],
+                ];
+            }
+
+        // Files of class PUBLICATIONS
+        } elseif ($record_info['class'] == 'publications') {
+            // PDF of publications is a child entity of type facsimile
+            $class = $record_info['class'];
+            $pdf = sql_getone(lq("SELECT e.id from #_TP_entities as e, types as t WHERE e.idtype=t.id AND class='fichiers' AND type='facsimile' AND idparent=?"), [$record_info['identity']], 'id');
+            if ($pdf) {
+                $files['pdf'] = [
+                    'type' => 'pdf',
+                    'url' => $set['url'] . '/' . $pdf . '?file=1',
+                    'mimetype' => 'application/pdf',
+                    'id' => $set['oai_id'] . ':pdf:' . $record_info['identity'],
+                ];
+            }
+        }
+    }
 
     return $files;
 }
@@ -427,6 +458,10 @@ function get_record_files($set, $record_info) {
 Create a structured array describing a file for mets record
 Input:
     $file (assoc array): with type, url, mimetype and id
+Output:
+    $struc (assoc array): xml tree structure of a file for mets record
+TODO:
+    can add DMDID attribute to mets:file
 */
 function mets_file_structure($file) {
     return [
