@@ -71,6 +71,18 @@ function get_record_from_identifier($identifier) {
 }
 
 /*
+Returns rows of `records table` from all children of a record
+Input:
+    $oai_id (string): oai_id of the set
+    $identity (int): identity of the parent record
+Output:
+    $children (Array of associative array): rows from `records` table
+*/
+function get_record_children($oai_id, $identity) {
+    return sql_get('SELECT * FROM `records` where `oai_id` = ? and `idparent` = ? order by `rank`', [$oai_id, $identity]);
+}
+
+/*
 Returns oai, openaire or mets type of a publication
 Input:
   $class (string): lodel class of the publication

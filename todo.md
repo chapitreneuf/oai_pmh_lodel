@@ -245,5 +245,4 @@ done
   - dates must be UTC
     - double check modification dates it is important for incremental harvest (YES it is)
   - site name oai-pmh could be a config (change all connect_site())
-  - record.php functions should not have SQL query in it
   - re-read file section for mets, must find docannexe, url for pdf or TEI could be config or user function

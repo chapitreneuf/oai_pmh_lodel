@@ -358,7 +358,7 @@ function mets_record($set, $record_info, &$mets=[], &$map=false, &$files=[], $no
     // Look for children of this record
     if ($record_info['class'] == 'publications') {
         connect_site('oai-pmh');
-        $children = sql_get('SELECT * FROM `records` where `oai_id` = ? and `idparent` = ? order by `rank`', [$record_info['oai_id'], $record_info['identity']]);
+        $children =get_record_children($record_info['oai_id'], $record_info['identity']);
 
         // Loop on children, add order information, and construct their maps
         $order = 1;
