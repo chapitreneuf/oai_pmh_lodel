@@ -112,24 +112,6 @@ function get_option($group, $name) {
 }
 
 /*
-Get list of entities of a class
-TODO: not used
-Input:
-    $class (string): class name
-    $type (string): type name (optional)
-    $site (string): short name of lodel site (optional)
-Output:
-    Array of associative arrays with those keys
-    identity, titre, datemisenligne, langue, status
-*/
-function get_entity_info($class, $type='', $site='') {
-    if ($site) {
-        connect_site($site);
-    }
-    return sql_get(lq("SELECT identity, titre, datemisenligne, langue, status FROM `#_TP_$class` c, `#_TP_entities` e WHERE c.identity = e.id AND status>0"));
-}
-
-/*
 Get list of entities of a class and type
 MUST be connected to a site
 Input:
@@ -140,7 +122,7 @@ Input:
     $order (string): order by clause
 Output:
     Array of associative arrays with those keys
-    identity, titre, datemisenligne, dateacceslibre, modificationdate
+    identity, titre, datemisenligne, dateacceslibre, modificationdate, idparent, rank, upd
 */
 function get_entities($class, $type, $limit=10, $offset=0, $order='identity') {
     $q = lq("SELECT c.`identity`, c.`titre`, c.`datemisenligne`, c.`dateacceslibre`, e.`modificationdate`, e.`idparent`, e.`rank`, e.`upd` FROM #_TP_$class c, #_TP_entities e, #_TP_types t WHERE c.identity = e.id AND e.idtype = t.id AND t.type = '$type' AND e.status>0 ORDER BY `$order`");
@@ -154,4 +136,16 @@ function get_entities($class, $type, $limit=10, $offset=0, $order='identity') {
     }
 
     return $records;
+}
+
+/*
+Get all fields of an entity
+Input:
+    $class (string): class name of the entity
+    $id (int): identity
+Output:
+    $entity (assoc array): row of the entity class table, and type
+*/
+function get_entity($class, $id) {
+    return sql_getone(lq("SELECT c.*, t.type FROM #_TP_$class c, #_TP_entities e, #_TP_types t WHERE e.idtype = t.id AND c.identity = e.id AND identity=?;"), [$id]);
 }

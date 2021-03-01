@@ -18,7 +18,7 @@ Output:
 */
 function get_record($set, $class, $id) {
     // Get lodel entity for this record
-    $rec = sql_getone(lq("SELECT c.*, t.type FROM #_TP_$class c, #_TP_entities e, #_TP_types t WHERE e.idtype = t.id AND c.identity = e.id AND identity=?;"), [$id]);
+    $rec = get_entity($class, $id);
     if (!$rec) return false;
 
     // Our big array with all info about the record
