@@ -33,9 +33,10 @@ function update_sets() {
     // TODO: test oai_id are unique
 
     connect_site('oai-pmh');
+    $global_set = get_conf('setsName');
     foreach($sites as $site) {
         $bind = [
-            'journal', $site['name'], $site['oai_id'], $site['title'], $site['description'], $site['subject'], $site['url'], $site['droitsauteur'],
+            $global_set, $site['name'], $site['oai_id'], $site['title'], $site['description'], $site['subject'], $site['url'], $site['droitsauteur'],
             $site['editeur'], $site['titresite'], $site['issn'], $site['issn_electronique'],
             $site['langueprincipale'], $site['doi_prefixe'], $site['openaire_access_level'], $site['upd'],
         ];
@@ -70,6 +71,7 @@ Output:
 function update_records() {
     connect_site('oai-pmh');
     $sets = get_sets(0);
+    $global_set = get_conf('setsName');
     foreach ($sets as $set) {
         _log("Set up of ${set['name']} records");
         // loop on classes and types that we expose to OAI
@@ -90,7 +92,7 @@ function update_records() {
                     // prepare our fields
                     $bind = [
                         $record['identity'], $record['titre'], $record['modificationdate'],
-                        'journals', $set['oai_id'], $openaire, $set['name'], $class, $type, $record['idparent'], $record['rank'], $record['upd']
+                        $global_set, $set['oai_id'], $openaire, $set['name'], $class, $type, $record['idparent'], $record['rank'], $record['upd']
                     ];
 
                     // Test if record exists

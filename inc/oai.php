@@ -14,7 +14,7 @@ Input:
 Output:
 [
     [
-        setSpec => journals:$oai_id,
+        setSpec => global_set_name:$oai_id,
         setName => name,
         setDescription => (optional) [
             container_name => name,
@@ -29,11 +29,12 @@ Output:
 ]
 */
 function listSets($count, $maxItems, $cursor=0) {
+    $global_set = get_conf('setsName');
     // artificially add our two top level sets
     if ($cursor == 0) {
         $maxItems -= 2;
         $sets = array(
-            ['setSpec'=>"journals", 'setName'=>"Les super journaux de notre dépôt"],
+            ['setSpec'=>$global_set, 'setName'=>get_conf('setDescription')],
             ['setSpec'=>"openaire", 'setName'=>"openaire"]
         );
     } else {
@@ -49,7 +50,7 @@ function listSets($count, $maxItems, $cursor=0) {
     $les_sets = get_sets($maxItems, $cursor);
 
     foreach($les_sets as $set) {
-        $this_set = ['setSpec'=>"journals:${set['oai_id']}", 'setName'=>$set['title']];
+        $this_set = ['setSpec'=>$global_set.':'.$set['oai_id'], 'setName'=>$set['title']];
         if (!empty($set['description']) || !empty($set['issn']) || !empty($set['issn_electronique']) || !empty($set['subject']) ) {
             $this_set['setDescription'] = [
                 'container_name' => 'oai_dc:dc',
@@ -148,7 +149,7 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records
         }
     } else {
         $wheres[] = '`set` = ?';
-        $bind[] = 'journals';
+        $bind[] = get_conf('setsName');
     }
 
     // If METS metadataPrefix, force class=publications AND type=numero

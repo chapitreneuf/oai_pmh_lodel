@@ -11,6 +11,6 @@ $config = array(
     'adminEmail' => 'your@email.org',
     'repositoryName' => 'Name of repository',
     'earliestDatestamp' => '2013-01-01T12:00:00Z',
-    'setsName' => 'journals',
+    'setsName' => 'journals', // If you change that, you MUST re-run tools/setup.php
     'setDescription' => 'Your awesome collection',
 );

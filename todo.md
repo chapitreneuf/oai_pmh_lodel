@@ -241,11 +241,9 @@ done
 
 
 # TODO:
-  - set: use config(setsName, setDescription): oai.php and update_db.php
   - better error description in server
   - dates must be UTC
     - double check modification dates it is important for incremental harvest (YES it is)
   - site name oai-pmh could be a config (change all connect_site())
   - record.php functions should not have SQL query in it
-  - better handle return of errors
   - re-read file section for mets, must find docannexe, url for pdf or TEI could be config or user function
