@@ -309,9 +309,12 @@ function mets_record($set, $record_info, &$mets=[], &$map=false, &$files=[], $no
         $map = ['mets:structMap', '', [], []];
     }
 
-    # Create dmdSec for this record
+    # Get the record
     connect_site($record_info['site']);
     $record = get_record($set, $record_info['class'], $record_info['identity']);
+    if (!$record) return false;
+
+    # Create dmdSec for this record
     format_oai_qdc($record);
     $dmdid = $record_info['oai_id'] . ':' . $record_info['identity'];
     $mets[] = ['mets:dmdSec', '', ['ID' => $dmdid],
@@ -351,24 +354,18 @@ function mets_record($set, $record_info, &$mets=[], &$map=false, &$files=[], $no
 
     // Look for children of this record
     if ($record_info['class'] == 'publications') {
-        // TODO use get_publication_types() to filter class and type
-        $children = sql_get(lq('SELECT e.id FROM #_TP_entities as e, #_TP_types as t
-            WHERE e.idparent=? AND e.status > 0 AND e.idtype = t.id AND (
-            (t.class = "textes" AND t.type IN ("article", "chronique", "compterendu", "notedelecture", "editorial")) OR
-            (t.class = "publications" AND t.type IN ("numero","souspartie")))
-            order by e.rank;'), [$record_info['identity']]);
+        connect_site('oai-pmh');
+        $children = sql_get('SELECT * FROM `records` where `oai_id` = ? and `idparent` = ? order by `rank`', [$record_info['oai_id'], $record_info['identity']]);
 
-        // Loop on children, pass order to it
+        // Loop on children, add order information, and construct their maps
         $order = 1;
-        foreach ($children as $i) {
-            connect_site('oai-pmh');
-            $child_info = sql_getone("SELECT * FROM `records` WHERE `oai_id` = ? AND identity = ?;", [$record_info['oai_id'], $i['id']]);
+        foreach ($children as $child_info) {
             $child_info['order'] = $order++;
             mets_record($set, $child_info, $mets, $my_map, $files, 1);
         }
     }
 
-    // add this record as child of parent to the map
+    // Push our map to the map of our parent
     $map[3][] = &$my_map;
 
     // Only return something at first call
