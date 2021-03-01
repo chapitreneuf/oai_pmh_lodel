@@ -6,7 +6,7 @@
 - http://www.openarchives.org/OAI/2.0/guidelines-repository.htm
 
 
-## TODO
+## SPEC
 - upgrade script
     - add
         - id_oai: should be site short name
@@ -165,18 +165,6 @@ while inotifywait -r -e attrib,modify,create,delete,move .; do
     rsync -avz --delete --exclude-from=.rsyncignore . /target
 done
 
-## TODO
-  - better error description in server
-  - mets
-    - only for publications, numero
-    - mhhhh
-    - pfffff
-    - ListMetadataFormats for mets
-  - dates must be UTC
-    - double check modification dates it is important for incremental harvest
-  - site name oai-pmh should be a config (change all connect_site())
-  - record.php functions should not have SQL query in it
-
 ## project structure
 /
   index.php : entry point
@@ -252,3 +240,12 @@ done
         recurs (me, $child)
 
 
+# TODO:
+  - set: use config(setsName, setDescription): oai.php and update_db.php
+  - better error description in server
+  - dates must be UTC
+    - double check modification dates it is important for incremental harvest (YES it is)
+  - site name oai-pmh could be a config (change all connect_site())
+  - record.php functions should not have SQL query in it
+  - better handle return of errors
+  - re-read file section for mets, must find docannexe, url for pdf or TEI could be config or user function
