@@ -149,3 +149,59 @@ Output:
 function get_entity($class, $id) {
     return sql_getone(lq("SELECT c.*, t.type FROM #_TP_$class c, #_TP_entities e, #_TP_types t WHERE e.idtype = t.id AND c.identity = e.id AND identity=?;"), [$id]);
 }
+
+/*
+Returns array of person name associated to an entity
+Input:
+    $id (int): identifier of lodel entity
+    $type (string): persontype of lodel Editorial Model
+Output:
+    ['lastname, firstname', …]
+*/
+function get_persons($id, $type) {
+    $pers = sql_get(
+        lq("SELECT g_firstname,g_familyname FROM #_TP_relations r, #_TP_persons p, #_TP_persontypes pt WHERE r.id1=? AND r.id2=p.id AND nature='G' AND p.idtype=pt.id AND type=? ORDER BY `degree`;"),
+        [$id, $type]
+    );
+    $persons = array();
+    foreach ($pers as $p) {
+        $persons[] = $p['g_familyname'] . ', ' . $p['g_firstname'];
+    }
+
+    return $persons;
+}
+
+/*
+Get array of identity of all children (recursive)
+Input:
+    $id (int): identifier of parent lodel entity
+Output:
+    [id, id, …]
+*/
+function get_children($id) {
+    $ids = array();
+
+    $children = sql_get(lq("SELECT id FROM #_TP_entities WHERE idparent=?;"), [$id]);
+    foreach ($children as $i) {
+        $ids[] = $i['id'];
+        $ids = array_merge(get_children($i['id']), $ids);
+    }
+
+    return $ids;
+}
+
+/*
+Get indexes of a type attach to an entity
+If type contains a % will search with SQL LIKE
+Input:
+    $id: id of entity
+    $type: type of index
+Output:
+    Array of associative array with found indexes
+    [ [name=>, type=>], … ]
+*/
+function get_index($id, $type) {
+    $sql_type = strpos($type, '%') === false ? 't.`type` = ?' : 't.`type` LIKE ?';
+    $entries = sql_get(lq("SELECT e.g_name, t.type FROM #_TP_relations r, #_TP_entries e, #_TP_entrytypes t WHERE t.class='indexes' AND r.id1=? AND r.id2=e.id AND t.id=e.idtype AND nature='E' AND $sql_type ORDER BY t.`rank`, r.`degree`;"), [$id, $type]);
+    return $entries;
+}

@@ -61,8 +61,7 @@ function update_sets() {
 
 /*
 Update or insert all records of all sets to `records` table
-Will only update informations about the record if modification date of entity has changed
-TODO: maybe should use `udp` to trigger update
+Will only update informations about the record if upd of entity has changed
 Input:
     none
 Output:
