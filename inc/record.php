@@ -247,6 +247,8 @@ function create_record($record_info, $metadataPrefix, $full) {
 
     if ($metadataPrefix == 'mets') {
         $children = mets_record($set, $record_info);
+        if (!$children) return false;
+
         $container_name = 'mets:mets';
         $container_attributes = [
             'xmlns:mets' => "http://www.loc.gov/METS/",
@@ -258,6 +260,7 @@ function create_record($record_info, $metadataPrefix, $full) {
     } else {
         connect_site($record_info['site']);
         $children = get_record($set, $record_info['class'], $record_info['identity']);
+        if (!$children) return false;
 
         // Format according to metadataPrefix
         if ($metadataPrefix == 'oai_dc') {

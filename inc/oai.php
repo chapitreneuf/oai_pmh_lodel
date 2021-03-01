@@ -174,6 +174,8 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records
     $records = [];
     foreach ($record_list as $record_info) {
         $record = create_record($record_info, $metadataPrefix, $list_records);
+        if (!$record) continue;
+
         $records[] = $record;
     }
 
