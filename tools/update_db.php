@@ -90,23 +90,23 @@ function update_records() {
                     // prepare our fields
                     $bind = [
                         $record['identity'], $record['titre'], $record['modificationdate'],
-                        'journals', $set['oai_id'], $openaire, $set['name'], $class, $type
+                        'journals', $set['oai_id'], $openaire, $set['name'], $class, $type, $record['idparent'], $record['rank'], $record['upd']
                     ];
 
                     // Test if record exists
-                    $info = sql_getone("SELECT `id`, `date` FROM `records` WHERE `oai_id` = ? AND `identity` = ?;", [$set['oai_id'], $record['identity']]);
+                    $info = sql_getone("SELECT `id`, `upd` FROM `records` WHERE `oai_id` = ? AND `identity` = ?;", [$set['oai_id'], $record['identity']]);
                     if ($info) {
                         // only update if entity has changed
-                        if ($info['date'] == $record['modificationdate']) {
+                        if ($info['upd'] == $record['upd']) {
                             _log("not updating ${set['oai_id']} - ${record['identity']}");
                             continue;
                         }
 
-                        $q = "UPDATE `records` SET `identity`=?, `title`=?, `date`=?, `set`=?, `oai_id`=?, `openaire`=?, `site`=?, `class`=?, `type`=? WHERE id=?;";
+                        $q = "UPDATE `records` SET `identity`=?, `title`=?, `date`=?, `set`=?, `oai_id`=?, `openaire`=?, `site`=?, `class`=?, `type`=?, `idparent`=?, `rank`=?, `upd`=? WHERE id=?;";
                         $bind[] = $info['id'];
                         _log("Updating ${set['oai_id']} - ${record['identity']}");
                     } else {
-                        $q = "INSERT INTO `records` (`identity`, `title`, `date`, `set`, `oai_id`, `openaire`, `site`, `class`, `type`) VALUES (?,?,?,?,?,?,?,?,?);";
+                        $q = "INSERT INTO `records` (`identity`, `title`, `date`, `set`, `oai_id`, `openaire`, `site`, `class`, `type`, `idparent`, `rank`, `upd`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?);";
                         _log("Inserting ${set['oai_id']} - ${record['identity']}");
                     }
 
