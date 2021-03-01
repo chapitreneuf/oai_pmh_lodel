@@ -458,8 +458,12 @@ function format_record(&$record, &$map) {
             // If attribute is defined in field, it is a lang attribute
             if (!empty($field[2])) {
                 $field[2] = ['xml:lang' => $field[2]];
-            } elseif ($attrs) {
-                $field[2] = $attrs;
+            }
+            // Add attributes
+            if ($attrs) {
+                foreach ($attrs as $k => $v) {
+                    $field[2][$k] = $v;
+                }
             }
         }
     }
@@ -527,7 +531,7 @@ function format_oai_qdc(&$record) {
         'temporal' => ['dcterms:temporal'],
         'bibliographicalCitation.issue' => ['dcterms:bibliographicalCitation.issue'],
         'alternative' => ['dcterms:alternative'],
-        'subject' => ['dcterms:subject'],
+        'subject' => ['dcterms:subject', '', ['scheme'=>'keywords']],
         'abstract' => ['dcterms:abstract'],
         'description' => ['dcterms:description'],
     ];
