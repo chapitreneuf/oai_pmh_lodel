@@ -6,7 +6,7 @@
 - http://www.openarchives.org/OAI/2.0/guidelines-repository.htm
 
 
-## TODO
+## SPEC
 - upgrade script
     - add
         - id_oai: should be site short name
@@ -165,18 +165,6 @@ while inotifywait -r -e attrib,modify,create,delete,move .; do
     rsync -avz --delete --exclude-from=.rsyncignore . /target
 done
 
-## TODO
-  - better error description in server
-  - mets
-    - only for publications, numero
-    - mhhhh
-    - pfffff
-    - ListMetadataFormats for mets
-  - dates must be UTC
-    - double check modification dates it is important for incremental harvest
-  - site name oai-pmh should be a config (change all connect_site())
-  - record.php functions should not have SQL query in it
-
 ## project structure
 /
   index.php : entry point
@@ -192,3 +180,69 @@ done
     oai.php : oai functions
     utils.php : other functions
     record.php : record functions
+
+## Mets
+  omg j'ai pas envie de faire ce format…
+  va fallir 10 ans pour écrire et comprendre la spec :
+  - only for publications, numero
+
+- <mets:dmdSec ID=""> : list of all document of the structure
+  - attr: ID : uniq id → oai_id : elem id 
+  - <mets:mdWrap MDTYPE="DC" LABEL="Dublin Core Descriptive Metadata" MIMETYPE="text/xml">
+    - <mets:xmlData>
+      - qdc of document
+- <mets:fileSec>
+  - <mets:fileGrp ID="FG:site_oai:255"> : list of class==texte document and their format
+    - <mets:file ID="site_oai:xhtml:255" MIMETYPE="text/html">
+        <mets:FLocat LOCTYPE="URL" xlink:href="http://edinum.org/site/255"/>
+      </mets:file>
+      TODO: what other formats ?
+        - PDF (included files)
+        - TEI
+- <mets:structMap> : list of all element, nested
+  - <mets:div LABEL="titre" TYPE="mets_type" DMDID="reference to dmd id" ID="reference to nothing">
+    - <mets:fptr FILEID="reference to fileSec id"/>
+
+  types:
+  'publications' => [
+            'numero' => ['mets'=>'issue'],
+            'souspartie' => ['mets'=>'part'],
+        ],
+        'textes' => [
+            'article' => ['mets'=>'article'],
+            'chronique' => ['mets'=>'article'],
+            'compterendu' => ['mets'=>'review'],
+            'notedelecture' => ['mets'=>'review'],
+            'editorial' => ['mets'=>'introduction'],
+        ],
+
+  mets : 
+   func mets(id, map, dmd, file)
+      dmd[] = oai_id:elem_id + qdc
+      map = map[] titre + dmd_id
+      if class == texte
+        filegrp[] = FG:oai_id:elem_id
+        foreach type of file
+          filegrp[][] = oai_id:file_type:elem_id
+          map fptr
+      else
+        foreach children
+          mets(children_id, map, dmd, file)
+
+
+
+## Create xml tree
+
+(&$parent, $tree)
+ name, value, attr, children
+ if children
+    foreach children
+        recurs (me, $child)
+
+
+# TODO:
+  - better error description in server
+  - dates must be UTC
+    - double check modification dates it is important for incremental harvest (YES it is)
+  - site name oai-pmh could be a config (change all connect_site())
+  - re-read file section for mets, must find docannexe, url for pdf or TEI could be config or user function

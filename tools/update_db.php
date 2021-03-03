@@ -33,9 +33,10 @@ function update_sets() {
     // TODO: test oai_id are unique
 
     connect_site('oai-pmh');
+    $global_set = get_conf('setsName');
     foreach($sites as $site) {
         $bind = [
-            'journal', $site['name'], $site['oai_id'], $site['title'], $site['description'], $site['subject'], $site['url'], $site['droitsauteur'],
+            $global_set, $site['name'], $site['oai_id'], $site['title'], $site['description'], $site['subject'], $site['url'], $site['droitsauteur'],
             $site['editeur'], $site['titresite'], $site['issn'], $site['issn_electronique'],
             $site['langueprincipale'], $site['doi_prefixe'], $site['openaire_access_level'], $site['upd'],
         ];
@@ -60,8 +61,7 @@ function update_sets() {
 
 /*
 Update or insert all records of all sets to `records` table
-Will only update informations about the record if modification date of entity has changed
-TODO: maybe should use `udp` to trigger update
+Will only update informations about the record if upd of entity has changed
 Input:
     none
 Output:
@@ -70,6 +70,7 @@ Output:
 function update_records() {
     connect_site('oai-pmh');
     $sets = get_sets(0);
+    $global_set = get_conf('setsName');
     foreach ($sets as $set) {
         _log("Set up of ${set['name']} records");
         // loop on classes and types that we expose to OAI
@@ -90,23 +91,23 @@ function update_records() {
                     // prepare our fields
                     $bind = [
                         $record['identity'], $record['titre'], $record['modificationdate'],
-                        'journals', $set['oai_id'], $openaire, $set['name'], $class, $type
+                        $global_set, $set['oai_id'], $openaire, $set['name'], $class, $type, $record['idparent'], $record['rank'], $record['upd']
                     ];
 
                     // Test if record exists
-                    $info = sql_getone("SELECT `id`, `date` FROM `records` WHERE `oai_id` = ? AND `identity` = ?;", [$set['oai_id'], $record['identity']]);
+                    $info = sql_getone("SELECT `id`, `upd` FROM `records` WHERE `oai_id` = ? AND `identity` = ?;", [$set['oai_id'], $record['identity']]);
                     if ($info) {
                         // only update if entity has changed
-                        if ($info['date'] == $record['modificationdate']) {
+                        if ($info['upd'] == $record['upd']) {
                             _log("not updating ${set['oai_id']} - ${record['identity']}");
                             continue;
                         }
 
-                        $q = "UPDATE `records` SET `identity`=?, `title`=?, `date`=?, `set`=?, `oai_id`=?, `openaire`=?, `site`=?, `class`=?, `type`=? WHERE id=?;";
+                        $q = "UPDATE `records` SET `identity`=?, `title`=?, `date`=?, `set`=?, `oai_id`=?, `openaire`=?, `site`=?, `class`=?, `type`=?, `idparent`=?, `rank`=?, `upd`=? WHERE id=?;";
                         $bind[] = $info['id'];
                         _log("Updating ${set['oai_id']} - ${record['identity']}");
                     } else {
-                        $q = "INSERT INTO `records` (`identity`, `title`, `date`, `set`, `oai_id`, `openaire`, `site`, `class`, `type`) VALUES (?,?,?,?,?,?,?,?,?);";
+                        $q = "INSERT INTO `records` (`identity`, `title`, `date`, `set`, `oai_id`, `openaire`, `site`, `class`, `type`, `idparent`, `rank`, `upd`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?);";
                         _log("Inserting ${set['oai_id']} - ${record['identity']}");
                     }
 

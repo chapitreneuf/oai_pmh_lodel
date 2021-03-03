@@ -71,59 +71,15 @@ function get_record_from_identifier($identifier) {
 }
 
 /*
-Returns array of person name associated to an entity
+Returns rows of `records table` from all children of a record
 Input:
-    $id (int): identifier of lodel entity
-    $type (string): persontype of lodel Editorial Model
+    $oai_id (string): oai_id of the set
+    $identity (int): identity of the parent record
 Output:
-    ['lastname, firstname', …]
+    $children (Array of associative array): rows from `records` table
 */
-function get_persons($id, $type) {
-    $pers = sql_get(
-        lq("SELECT g_firstname,g_familyname FROM #_TP_relations r, #_TP_persons p, #_TP_persontypes pt WHERE r.id1=? AND r.id2=p.id AND nature='G' AND p.idtype=pt.id AND type=? ORDER BY `degree`;"),
-        [$id, $type]
-    );
-    $persons = array();
-    foreach ($pers as $p) {
-        $persons[] = $p['g_familyname'] . ', ' . $p['g_firstname'];
-    }
-
-    return $persons;
-}
-
-/*
-Get array of identity of all children (recursive)
-Input:
-    $id (int): identifier of parent lodel entity
-Output:
-    [id, id, …]
-*/
-function get_children($id) {
-    $ids = array();
-
-    $children = sql_get(lq("SELECT id FROM #_TP_entities WHERE idparent=?;"), [$id]);
-    foreach ($children as $i) {
-        $ids[] = $i['id'];
-        $ids = array_merge(get_children($i['id']), $ids);
-    }
-
-    return $ids;
-}
-
-/*
-Get indexes of a type attach to an entity
-If type contains a % will search with SQL LIKE
-Input:
-    $id: id of entity
-    $type: type of index
-Output:
-    Array of associative array with found indexes
-    [ [name=>, type=>], … ]
-*/
-function get_index($id, $type) {
-    $sql_type = strpos($type, '%') === false ? 't.`type` = ?' : 't.`type` LIKE ?';
-    $entries = sql_get(lq("SELECT e.g_name, t.type FROM #_TP_relations r, #_TP_entries e, #_TP_entrytypes t WHERE t.class='indexes' AND r.id1=? AND r.id2=e.id AND t.id=e.idtype AND nature='E' AND $sql_type ORDER BY t.`rank`, r.`degree`;"), [$id, $type]);
-    return $entries;
+function get_record_children($oai_id, $identity) {
+    return sql_get('SELECT * FROM `records` where `oai_id` = ? and `idparent` = ? order by `rank`', [$oai_id, $identity]);
 }
 
 /*
@@ -148,15 +104,15 @@ TODO: this could be a config (or at least extendable)
 function get_publication_types() {
     return [
         'publications' => [
-            'numero' => ['oai'=>'issue', 'openaire'=> 'other'],
-            'souspartie' => ['oai'=>'part', 'openaire'=> 'other'],
+            'numero' => ['oai'=>'issue', 'openaire'=> 'other', 'mets'=>'issue'],
+            'souspartie' => ['oai'=>'part', 'openaire'=> 'other', 'mets'=>'part'],
         ],
         'textes' => [
-            'article' => ['oai'=>'article', 'openaire'=> 'article'],
-            'chronique' => ['oai'=>'article', 'openaire'=> 'other'],
-            'compterendu' => ['oai'=>'review', 'openaire'=> 'review'],
-            'notedelecture' => ['oai'=>'review', 'openaire'=> 'review'],
-            'editorial' => ['oai'=>'introduction', 'openaire'=> 'article'],
+            'article' => ['oai'=>'article', 'openaire'=> 'article', 'mets'=>'article'],
+            'chronique' => ['oai'=>'article', 'openaire'=> 'other', 'mets'=>'article'],
+            'compterendu' => ['oai'=>'review', 'openaire'=> 'review', 'mets'=>'review'],
+            'notedelecture' => ['oai'=>'review', 'openaire'=> 'review', 'mets'=>'review'],
+            'editorial' => ['oai'=>'introduction', 'openaire'=> 'article', 'mets'=>'introduction'],
         ],
     ];
 }

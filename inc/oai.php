@@ -14,7 +14,7 @@ Input:
 Output:
 [
     [
-        setSpec => journals:$oai_id,
+        setSpec => global_set_name:$oai_id,
         setName => name,
         setDescription => (optional) [
             container_name => name,
@@ -29,11 +29,12 @@ Output:
 ]
 */
 function listSets($count, $maxItems, $cursor=0) {
+    $global_set = get_conf('setsName');
     // artificially add our two top level sets
     if ($cursor == 0) {
         $maxItems -= 2;
         $sets = array(
-            ['setSpec'=>"journals", 'setName'=>"Les super journaux de notre dépôt"],
+            ['setSpec'=>$global_set, 'setName'=>get_conf('setDescription')],
             ['setSpec'=>"openaire", 'setName'=>"openaire"]
         );
     } else {
@@ -49,7 +50,7 @@ function listSets($count, $maxItems, $cursor=0) {
     $les_sets = get_sets($maxItems, $cursor);
 
     foreach($les_sets as $set) {
-        $this_set = ['setSpec'=>"journals:${set['oai_id']}", 'setName'=>$set['title']];
+        $this_set = ['setSpec'=>$global_set.':'.$set['oai_id'], 'setName'=>$set['title']];
         if (!empty($set['description']) || !empty($set['issn']) || !empty($set['issn_electronique']) || !empty($set['subject']) ) {
             $this_set['setDescription'] = [
                 'container_name' => 'oai_dc:dc',
@@ -90,11 +91,11 @@ Output:
     datestamp => '2017-01-17 10:30:02',
     set => [name, name],
     metadata => [
-        container_name => name,
-        container_attributes => [name => value, ],
-        fields => [
-            tagname => [value, value], OR
-            tagname => [[value,[attr_name=>value]], [value,[attr_name=>value]]],
+        node_name,
+        node_value,
+        [attr_name => attr_value, … ],
+        [
+            [ child_node_name, child_node_value, [attrs… ], [children, …] ],
             …
         ],
     ]
@@ -103,8 +104,6 @@ Output:
 function GetRecord($identifier, $metadataPrefix) {
     $record_info = get_record_from_identifier($identifier); // from utils
     if (!$record_info) return false;
-
-    // if METS metadataPrefix refuse if not class=publications AND type=numero
 
     // use True because we want to get the full record
     return create_record($record_info, $metadataPrefix, True); // from record
@@ -150,11 +149,16 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records
         }
     } else {
         $wheres[] = '`set` = ?';
-        $bind[] = 'journals';
+        $bind[] = get_conf('setsName');
     }
+
+    // If METS metadataPrefix, force class=publications AND type=numero
+    if ($metadataPrefix == 'mets') {
+        $wheres[] = '`class` = "publications" AND `type` = "numero"';
+    }
+
     $where = implode(' AND ', $wheres);
 
-    // If METS metadataPrefix, MUST force class=publications AND type=numero
 
     connect_site('oai-pmh');
     if ($count) {
@@ -165,11 +169,14 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records
     $bind[] = intval($deliveredRecords);
     $bind[] = intval($maxItems);
 
-    $record_list = sql_get('SELECT `site`, `class`, `identity`, `date`, `set`, `oai_id`, `openaire` FROM records WHERE '.$where.' ORDER BY id LIMIT ?,?;', $bind);
+    $record_list = sql_get('SELECT * FROM records WHERE '.$where.' ORDER BY id LIMIT ?,?;', $bind);
     // _log_debug($record_list);
 
+    $records = [];
     foreach ($record_list as $record_info) {
         $record = create_record($record_info, $metadataPrefix, $list_records);
+        if (!$record) continue;
+
         $records[] = $record;
     }
 
@@ -197,20 +204,20 @@ function ListMetadataFormats($identifier) {
             'record_prefix'=>'dc',
             'record_namespace' => 'http://purl.org/dc/elements/1.1/',
         ],
-        // [
-        //     'metadataPrefix'=>'mets',
-        //     'schema'=>'http://www.loc.gov/standards/mets/mets.xsd',
-        //     'metadataNamespace'=>'http://www.loc.gov/METS/',
-        // ],
+        'mets' => [
+            'metadataPrefix'=>'mets',
+            'schema'=>'http://www.loc.gov/standards/mets/mets.xsd',
+            'metadataNamespace'=>'http://www.loc.gov/METS/',
+        ],
     ];
 
     // If we have an identifier test if it can be exported as mets
-    // if (!empty($identifier)) {
-    //     $record = get_record_from_identifier($identifier);
-    //     if (!($record['class'] == 'publications' && $record['type'] == 'numero')) {
-    //         delete($formats['mets']);
-    //     }
-    // }
+    if (!empty($identifier)) {
+        $record = get_record_from_identifier($identifier);
+        if (!($record['class'] == 'publications' && $record['type'] == 'numero')) {
+            unset($formats['mets']);
+        }
+    }
 
     return $formats;
 }

@@ -4,9 +4,9 @@ global $config;
 // Default configuration
 $base_config = array(
     'listSize' => 10,
-    'setsName' => 'journals',
+    'setsName' => 'journals', // If changed, tools/setup.php must be re-run
     'setDescription' => 'Our beautiful journals collection',
-    'deletedRecord' => 'no',
+    'deletedRecord' => 'no', // This is not implemented, must remain 'no'
     'repositoryName' => 'Not configured name',
     'baseURL' => 'Not configured URL',
     'protocolVersion' => '2.0',
