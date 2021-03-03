@@ -3,6 +3,8 @@
 This is a server that respond to [OAI-PMH](http://www.openarchives.org/OAI/2.0/openarchivesprotocol.htm) protocol specification made to work with [lodel CMS](http://lodel.org/).
 It uses a core OAI-PMH library and this middleware to fetch data from lodel database.
 
+Available metadata formats are oai_dc, qdc and mets.
+
 ## INSTALL
 Clone OAI-PHP server to a directory listed in your php import path. Use the lodel branch.
 
@@ -41,10 +43,15 @@ Add a cronjob to update your database every hour
 
 Your OAI-PHP server will be available at `http://your-lodel-instance/oai/?verb=ListSets`
 
+## Upgrade
+You must upgrade oai_pmh and oai_pmh_lodel at the same time and use the same **x.y**.z tagged version. `lodel` and `master` branch are compatible. Read CHANGELOG.md for detailed changes.
+### 0.1.0 to 0.2.x
+You have to reset your database to allow upgrade of the SQL schema using `php tools/setup.php` and then `php tools/update_db.php`
+
 ## How it works
 This tool connects to your lodel installation and database using its lodelconfig.php configuration.
 
-It uses it's own database (lodel_oai-pmh) to save Sets (lodel sites) and Records (documents).
+It uses its own database (lodel_oai-pmh) to save Sets (lodel sites) and Records (documents).
  
 Update of the database is done by update_db.php script that should run in the background using crontab. It takes care of newly published sites or documents and take care of deletion (deleted status is not implemented in OAI-PMH).
 

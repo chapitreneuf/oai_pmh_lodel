@@ -1,0 +1,8 @@
+- 0.1.0
+  - oai-pmh implemetation
+  - oai_dc metadata format
+  - qdc metadata format
+- 0.2.0
+  - mets metadata format
+  - use of `setsName` from config to expose global sets name
+  - add missing attribute `scheme` to qdc `subject`
