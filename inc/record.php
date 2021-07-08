@@ -136,7 +136,7 @@ function get_record($set, $class, $id) {
         if (!empty($rec['resume'])) {
             // Split resume by lang
             // regexp from lodel/scripts/loops.php:533:function loop_mltext
-            preg_match_all("/(?:&amp;lt;|&lt;|<)r2r:ml lang\s*=(?:&amp;quot;|&quot;|\")(\w+)(?:&amp;quot;|&quot;|\")(?:&amp;gt;|&gt;|>)(.*?)(?:&amp;lt;|&lt;|<)\/r2r:ml(?:&amp;    546 gt;|&gt;|>)/s", $rec['resume'], $mltexts, PREG_SET_ORDER);
+		    preg_match_all("/(?:&amp;lt;|&lt;|<)r2r:ml lang\s*=(?:&amp;quot;|&quot;|\")(\w+)(?:&amp;quot;|&quot;|\")(?:&amp;gt;|&gt;|>)(.*?)(?:&amp;lt;|&lt;|<)\/r2r:ml(?:&amp;gt;|&gt;|>)/s", $rec['resume'], $mltexts, PREG_SET_ORDER);
             foreach ($mltexts as $text) {
                 $description = removenotes($text[2]);
                 $description = strip_tags($description);
@@ -156,7 +156,7 @@ function get_record($set, $class, $id) {
 
     // For publications use introduction split by lang
     } elseif ($class == 'publications' && !empty($rec['introduction'])) {
-        preg_match_all("/(?:&amp;lt;|&lt;|<)r2r:ml lang\s*=(?:&amp;quot;|&quot;|\")(\w+)(?:&amp;quot;|&quot;|\")(?:&amp;gt;|&gt;|>)(.*?)(?:&amp;lt;|&lt;|<)\/r2r:ml(?:&amp;    546 gt;|&gt;|>)/s", $rec['introduction'], $mltexts, PREG_SET_ORDER);
+        preg_match_all("/(?:&amp;lt;|&lt;|<)r2r:ml lang\s*=(?:&amp;quot;|&quot;|\")(\w+)(?:&amp;quot;|&quot;|\")(?:&amp;gt;|&gt;|>)(.*?)(?:&amp;lt;|&lt;|<)\/r2r:ml(?:&amp;gt;|&gt;|>)/s", $rec['introduction'], $mltexts, PREG_SET_ORDER);
         foreach ($mltexts as $text) {
             $description = removenotes($text[2]);
             $description = strip_tags($description);
@@ -175,7 +175,7 @@ function get_record($set, $class, $id) {
     #
     # ALTERNATIVE
     #
-    preg_match_all("/(?:&amp;lt;|&lt;|<)r2r:ml lang\s*=(?:&amp;quot;|&quot;|\")(\w+)(?:&amp;quot;|&quot;|\")(?:&amp;gt;|&gt;|>)(.*?)(?:&amp;lt;|&lt;|<)\/r2r:ml(?:&amp;    546 gt;|&gt;|>)/s", $rec['altertitre'], $mltexts, PREG_SET_ORDER);
+    preg_match_all("/(?:&amp;lt;|&lt;|<)r2r:ml lang\s*=(?:&amp;quot;|&quot;|\")(\w+)(?:&amp;quot;|&quot;|\")(?:&amp;gt;|&gt;|>)(.*?)(?:&amp;lt;|&lt;|<)\/r2r:ml(?:&amp;gt;|&gt;|>)/s", $rec['altertitre'], $mltexts, PREG_SET_ORDER);
     foreach ($mltexts as $text) {
         $altertitre = removenotes($text[2]);
         $altertitre = strip_tags($altertitre);
