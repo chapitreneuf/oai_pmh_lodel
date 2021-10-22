@@ -85,7 +85,8 @@ function get_record($set, $class, $id) {
     #
     # IDENTIFIER
     #
-    $record[] = ['identifier_url', $set['url'] . '/' . $id];
+    $set_id = (URI == 'singleid') ? $id : 'index.php?id=' . $id;
+    $record[] = ['identifier_url', $set['url'] . '/' . $set_id];
     $record[] = ['identifier_doi', 'urn:doi:' . $set['doi_prefixe'] . $id];
 
     #
