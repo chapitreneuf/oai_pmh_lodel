@@ -85,7 +85,7 @@ function get_record($set, $class, $id) {
     #
     # IDENTIFIER
     #
-    $record[] = ['identifier_url', $set['url'] . '/' . $id];
+    $record[] = ['identifier_url', $set['url'] . '/' . makeurlwithid($id)];
     $record[] = ['identifier_doi', 'urn:doi:' . $set['doi_prefixe'] . $id];
 
     #
@@ -402,7 +402,7 @@ function get_record_files($set, $record_info) {
     // All types have an HTML version of the record
     $files['xhtml'] = [
         'type' => 'xhtml',
-        'url' => $set['url'] . '/' . $record_info['identity'],
+        'url' => $set['url'] . '/' . makeurlwithid($record_info['identity']),
         'mimetype' => 'text/html',
         'id' => $set['oai_id'] . ':xhtml:' . $record_info['identity'],
     ];
@@ -418,7 +418,7 @@ function get_record_files($set, $record_info) {
             if ($pdf) {
                 $files['pdf'] = [
                     'type' => 'pdf',
-                    'url' => $set['url'] . '/' . $record_info['identity'] . '?file=1',
+                    'url' => $set['url'] . '/' . makeurlwithfile($record_info['identity']),
                     'mimetype' => 'application/pdf',
                     'id' => $set['oai_id'] . ':pdf:' . $record_info['identity'],
                 ];
@@ -429,7 +429,7 @@ function get_record_files($set, $record_info) {
             if ($tei) {
                 $files['tei'] = [
                     'type' => 'tei',
-                    'url' => $set['url'] . '/' . $tei . '?file=1',
+                    'url' => $set['url'] . '/' . makeurlwithfile($tei),
                     'mimetype' => 'text/xml',
                     'id' => $set['oai_id'] . ':tei:' . $record_info['identity'],
                 ];
@@ -443,7 +443,7 @@ function get_record_files($set, $record_info) {
             if ($pdf) {
                 $files['pdf'] = [
                     'type' => 'pdf',
-                    'url' => $set['url'] . '/' . $pdf . '?file=1',
+                    'url' => $set['url'] . '/' . makeurlwithfile($pdf),
                     'mimetype' => 'application/pdf',
                     'id' => $set['oai_id'] . ':pdf:' . $record_info['identity'],
                 ];

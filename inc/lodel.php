@@ -17,6 +17,7 @@ function lodel_connect() {
     ini_set('include_path', SITEROOT. $cfg['home'] . PATH_SEPARATOR . ini_get('include_path'));
     require 'context.php';
     require 'textfunc.php';
+    require 'func.php';
     C::setCfg($cfg);
 
     require_once 'auth.php';
