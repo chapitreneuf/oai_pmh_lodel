@@ -242,7 +242,7 @@ function create_record($record_info, $metadataPrefix, $full) {
     if (!$full) return $record;
 
     // Search for all informations about the record (ListRecords and getRecord verbs)
-    connect_site('oai-pmh');
+    connect_site(get_conf('lodelOAIsite'));
     $set = get_set($record_info['site']);
 
     if ($metadataPrefix == 'mets') {
@@ -357,7 +357,7 @@ function mets_record($set, $record_info, &$mets=[], &$map=false, &$files=[], $no
 
     // Look for children of this record
     if ($record_info['class'] == 'publications') {
-        connect_site('oai-pmh');
+        connect_site(get_conf('lodelOAIsite'));
         $children =get_record_children($record_info['oai_id'], $record_info['identity']);
 
         // Loop on children, add order information, and construct their maps

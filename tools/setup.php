@@ -17,14 +17,17 @@ if (php_sapi_name() != "cli") {
 require_once('inc/init.php');
 
 global $database_prefix;
-if (!connect_site('oai-pmh')) {
+
+$lodel_oai_site = get_conf('lodelOAIsite');
+
+if (!connect_site($lodel_oai_site)) {
     $db_user = C::get('dbusername', 'cfg');
     print "\n";
     print "Database oai-pmp does not exists, you must create it. \n";
     print " Connect to MySQL and type: \n";
     print "\n";
-    print "CREATE DATABASE `{$database_prefix}_oai-pmh`; \n";
-    print "GRANT ALL PRIVILEGES ON `{$database_prefix}_oai-pmh` . * TO '$db_user'@'localhost'; \n";
+    print "CREATE DATABASE `{$database_prefix}_{$lodel_oai_site}`; \n";
+    print "GRANT ALL PRIVILEGES ON `{$database_prefix}_{$lodel_oai_site}` . * TO '$db_user'@'localhost'; \n";
     print "\n";
 }
 

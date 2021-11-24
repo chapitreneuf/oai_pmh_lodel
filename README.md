@@ -25,7 +25,7 @@ cp config.php.txt config.php
 nano config.php
 ```
 
-Create the needed database, launch setup.php script and fill your database. You **must** use the same database prefix as your lodel installation.
+Create the needed database, launch setup.php script and fill your database. You **must** use the same database prefix as your lodel installation. Database name is by default oai-pmh (prefixed by lodel_), but it can be changed using 'lodelOAIsite' configuration.
 ```
 mysql
 > CREATE DATABASE `lodel_oai-pmh`;
@@ -42,6 +42,8 @@ Add a cronjob to update your database every hour
 ```
 
 Your OAI-PHP server will be available at `http://your-lodel-instance/oai/?verb=ListSets`
+
+If you want to change URL, just change the name of the directory.
 
 ## Upgrade
 You must upgrade oai_pmh and oai_pmh_lodel at the same time and use the same **x.y**.z tagged version. `lodel` and `master` branch are compatible. Read CHANGELOG.md for detailed changes.

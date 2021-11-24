@@ -8,12 +8,13 @@ $base_config = array(
     'setDescription' => 'Our beautiful journals collection',
     'deletedRecord' => 'no', // This is not implemented, must remain 'no'
     'repositoryName' => 'Not configured name',
-    'baseURL' => 'Not configured URL',
+    'baseURL' => 'Not configured URL', // This must be the name of the directory where the code is (or create a rewrite rule in your httpd)
     'protocolVersion' => '2.0',
     'adminEmail' => 'not@configur.ed',
     'earliestDatestamp' => '0000-12-24T00:00:00Z',
     'granularity' => 'YYYY-MM-DDThh:mm:ssZ',
     'log' => false,
+    'lodelOAIsite' => 'oai-pmh', // name of your database
 //     'metadatas' => '',
 );
 

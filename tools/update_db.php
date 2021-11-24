@@ -10,7 +10,7 @@ if (php_sapi_name() != "cli") {
 }
 
 require_once('inc/init.php');
-connect_site('oai-pmh') or die("Could not connect to oai-pmh, have you launched setup.php ?");
+connect_site(get_conf('lodelOAIsite')) or die("Could not connect to ".get_conf('lodelOAIsite').", have you launched setup.php ?");
 
 // First delete non existing sets and records
 delete_sets();
@@ -32,7 +32,7 @@ function update_sets() {
     $sites = get_sites();
     // TODO: test oai_id are unique
 
-    connect_site('oai-pmh');
+    connect_site(get_conf('lodelOAIsite'));
     $global_set = get_conf('setsName');
     foreach($sites as $site) {
         $bind = [
@@ -68,7 +68,7 @@ Output:
     none
 */
 function update_records() {
-    connect_site('oai-pmh');
+    connect_site(get_conf('lodelOAIsite'));
     $sets = get_sets(0);
     $global_set = get_conf('setsName');
     foreach ($sets as $set) {
@@ -83,7 +83,7 @@ function update_records() {
                 // get all published entities of that class-type for this set (lodel site)
                 $records = get_entities($class, $type, 0); // from lodel
 
-                connect_site('oai-pmh');
+                connect_site(get_conf('lodelOAIsite'));
                 foreach ($records as $record) {
                     // openaire information: can be openAccess, embargoedAccess, restrictedAccess
                     $openaire = !empty($set['openaire_access_level']) ? $set['openaire_access_level'] : '';
@@ -134,7 +134,7 @@ function delete_sets() {
         $site_names[] = $site['name'];
     }
 
-    connect_site('oai-pmh');
+    connect_site(get_conf('lodelOAIsite'));
     $set_names = [];
     $sets = sql_get("SELECT name FROM `sets`;");
     foreach($sets as $set) {
@@ -171,7 +171,7 @@ Output:
 */
 function delete_records() {
     $batch = 500;
-    connect_site('oai-pmh');
+    connect_site(get_conf('lodelOAIsite'));
     $sets = get_sets(0);
     foreach ($sets as $set) {
         $start = 0;
@@ -195,7 +195,7 @@ function delete_records() {
                 delete_record($set['name'], $to_delete);
             }
 
-            connect_site('oai-pmh');
+            connect_site(get_conf('lodelOAIsite'));
             $start += $batch;
         }
     }
@@ -210,7 +210,7 @@ Output:
     none
 */
 function delete_record($site, $ids) {
-    connect_site('oai-pmh');
+    connect_site(get_conf('lodelOAIsite'));
     $in = join(',', $ids);
     _log("Deleting records from $site : $in");
     sql_query("DELETE FROM `records` WHERE `site`=? AND identity IN ($in);", [$site]);

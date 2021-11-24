@@ -40,7 +40,7 @@ function listSets($count, $maxItems, $cursor=0) {
     } else {
         $cursor -= 2;
     }
-    connect_site('oai-pmh');
+    connect_site(get_conf('lodelOAIsite'));
 
     // If asked only returns count of sets
     if ($count) {
@@ -160,7 +160,7 @@ function ListRecords($metadataPrefix, $from, $until, $set, $count, $list_records
     $where = implode(' AND ', $wheres);
 
 
-    connect_site('oai-pmh');
+    connect_site(get_conf('lodelOAIsite'));
     if ($count) {
         $total = sql_getone('SELECT count(id) as total FROM records WHERE '.$where, $bind, 'total');
         return $total;

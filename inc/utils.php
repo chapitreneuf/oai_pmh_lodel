@@ -63,7 +63,7 @@ function get_record_from_identifier($identifier) {
     $oai_id = $matches[1][0];
     $id = $matches[2][0];
 
-    connect_site('oai-pmh');
+    connect_site(get_conf('lodelOAIsite'));
     $record = sql_getone("SELECT * FROM `records` WHERE `oai_id` = ? AND identity = ?;", [$oai_id, $id]);
     if (!$record) throw new OAI2Exception('idDoesNotExist');
 
