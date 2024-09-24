@@ -82,7 +82,7 @@
     - dc                                     record
         dc:title                             title
         dc:creator                           creator[]
-        dc:contibutor                        contributor[]
+        dc:contributor                        contributor[]
         dc:rights                            rights, accessrights
         dc:date                              issued, embargoed
         dc:publisher                         publisher[]
@@ -97,7 +97,7 @@
         dcterms:title                        title
         dcterms:alternative                  alternative[]
         dcterms:creator                      creator[]
-        dcterms:contibutor                   contributor[]
+        dcterms:contributor                   contributor[]
         dcterms:issued                       issued
         dcterms:accessRights                 accessrights
         dcterms:available                    embargoed
